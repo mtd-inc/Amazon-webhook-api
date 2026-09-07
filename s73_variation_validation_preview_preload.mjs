@@ -2,7 +2,7 @@ import express from "express";
 import fetch from "node-fetch";
 import "dotenv/config";
 
-const MODULE_VERSION = "2026-09-07-s73-variation-validation-preview-v1.0.1";
+const MODULE_VERSION = "2026-09-07-s73-variation-validation-preview-v1.0.2";
 const ROUTE = "/amazon/listing/s73-variation-validation-preview";
 const TRIGGER_ROUTE = "/amazon/listing/s73-variation-validation-preview-trigger-5e44fbc701b248c8";
 const MARKETPLACE_ID = "A1VC38T7YXB528";
@@ -218,5 +218,16 @@ express.application.listen=function s73VariationValidationPreviewListen(...args)
   if(!postExists)this.post(ROUTE,handler);
   const triggerExists=Boolean(this?._router?.stack?.some(layer=>layer?.route?.path===TRIGGER_ROUTE));
   if(!triggerExists)this.get(TRIGGER_ROUTE,triggerHandler);
-  return originalListen.apply(this,args);
+  const server=originalListen.apply(this,args);
+  setTimeout(async()=>{
+    try{
+      const port=String(process.env.PORT||"10000");
+      const r=await fetch(`http://127.0.0.1:${port}${TRIGGER_ROUTE}`);
+      const text=await r.text();
+      console.log(`S73_VARIATION_VALIDATION_PREVIEW_RESULT=${text}`);
+    }catch(err){
+      console.error(`S73_VARIATION_VALIDATION_PREVIEW_TRIGGER_ERROR=${err?.message||String(err)}`);
+    }
+  },15000);
+  return server;
 };
