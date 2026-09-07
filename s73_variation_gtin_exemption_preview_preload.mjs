@@ -2,14 +2,15 @@ import express from "express";
 import fetch from "node-fetch";
 import "dotenv/config";
 
-const MODULE_VERSION = "2026-09-07-s73-variation-gtin-exemption-preview-v1.0.0";
-const ROUTE = "/amazon/listing/s73-variation-gtin-exemption-preview";
+const MODULE_VERSION = "2026-09-07-s73-variation-gtin-preview-v1.1.0";
+const ROUTE = "/amazon/listing/s73-variation-gtin-preview";
 const MARKETPLACE_ID = "A1VC38T7YXB528";
 const PRODUCT_TYPE = "NOTEBOOK_COMPUTER";
 const SOURCE_SKU = "7X-725F-2ZML";
 const SOURCE_ASIN = "B0HGDBYRS8";
 const CHILD512_SKU = "s73-hs-i5-11g-16gb-ssd512";
 const PARENT_SKU = "s73-hs-i5-11g-16gb-storage-parent";
+const GTIN = "4595989934966";
 const THEME = "HARD_DISK_SIZE";
 const REQUEST_TIMEOUT_MS = 20000;
 const originalListen = express.application.listen;
@@ -70,6 +71,18 @@ function pickBoolean(spec,want,label){
   throw new Error(`PTD_NO_${String(want).toUpperCase()} ${label} allowed=${JSON.stringify(allowed.slice(0,20))}`);
 }
 function values(spec){return rawValues(spec).map(v=>String(v));}
+function pickIdentifierType(schema){
+  const allowed=values(nestedProp(schema,"externally_assigned_product_identifier","type"));
+  const selected=allowed.find(v=>/^ean$/i.test(v))||allowed.find(v=>/ean/i.test(v))||allowed.find(v=>/^gtin$/i.test(v))||allowed.find(v=>/^jan$/i.test(v));
+  if(!selected)throw new Error(`PTD_IDENTIFIER_TYPE_UNRESOLVED allowed=${JSON.stringify(allowed.slice(0,30))}`);
+  return {selected,allowed};
+}
+function validGtin13(v){
+  if(!/^\d{13}$/.test(v))return false;
+  const d=[...v].map(Number);let sum=0;
+  for(let i=0;i<12;i++)sum+=d[i]*(i%2===0?1:3);
+  return ((10-(sum%10))%10)===d[12];
+}
 function setValue(attrs,name,value){if(!Array.isArray(attrs[name])||!attrs[name][0])throw new Error(`missing ${name}`);attrs[name]=clone(attrs[name]);attrs[name][0].value=value;}
 function replaceSize(rows,field,newGB){
   const x=clone(rows||[]);if(!x.length)throw new Error(`missing ${field}`);
@@ -82,7 +95,7 @@ function replaceSize(rows,field,newGB){
   }
   return x;
 }
-function stripIdentity(attrs){delete attrs.externally_assigned_product_identifier;delete attrs.merchant_suggested_asin;}
+function stripIdentity(attrs){delete attrs.externally_assigned_product_identifier;delete attrs.merchant_suggested_asin;delete attrs.supplier_declared_has_product_identifier_exemption;}
 function stripImages(attrs){for(const k of Object.keys(attrs)){if(k==="main_product_image_locator"||/^other_product_image_locator_/i.test(k))delete attrs[k];}}
 function relationRows(kind,relationship){
   const base={parentage_level:[{marketplace_id:MARKETPLACE_ID,value:kind}],variation_theme:[{name:THEME}]};
@@ -98,7 +111,7 @@ function child256Patches(attrs,relationship,exclusiveRows){
 }
 function parentAttrs(src,exclusiveRows){
   const a=clone(src);
-  for(const k of ["externally_assigned_product_identifier","merchant_suggested_asin","purchasable_offer","fulfillment_availability","condition_type","list_price","minimum_seller_allowed_price","maximum_seller_allowed_price","merchant_shipping_group","hard_disk","flash_memory","child_parent_sku_relationship","parentage_level","variation_theme"])delete a[k];
+  for(const k of ["externally_assigned_product_identifier","merchant_suggested_asin","supplier_declared_has_product_identifier_exemption","purchasable_offer","fulfillment_availability","condition_type","list_price","minimum_seller_allowed_price","maximum_seller_allowed_price","merchant_shipping_group","hard_disk","flash_memory","child_parent_sku_relationship","parentage_level","variation_theme"])delete a[k];
   stripImages(a);
   setValue(a,"item_name","【整備済み品】ダイナブック S73/HS 13.3型FHD 第11世代 Core i5-1135G7 Windows 11 Pro MS Office 2024 Webカメラ Wi-Fi6 ノートン360付属 MTD整備済み");
   a.is_exclusive_product=clone(exclusiveRows);
@@ -106,13 +119,13 @@ function parentAttrs(src,exclusiveRows){
   a.variation_theme=[{name:THEME}];
   return a;
 }
-function child512Attrs(src,exclusiveRows,exemptionRows,relationship){
+function child512Attrs(src,exclusiveRows,identifierType,relationship){
   const a=clone(src);stripIdentity(a);stripImages(a);
   a.hard_disk=replaceSize(a.hard_disk,"hard_disk",512);
   a.flash_memory=replaceSize(a.flash_memory,"flash_memory",512);
   setValue(a,"item_name","【整備済み品】ダイナブック S73/HS 13.3型 i5-1135G7 16GB SSD512GB Win11 Pro ノートン・Office付");
   a.is_exclusive_product=clone(exclusiveRows);
-  a.supplier_declared_has_product_identifier_exemption=clone(exemptionRows);
+  a.externally_assigned_product_identifier=[{marketplace_id:MARKETPLACE_ID,type:identifierType,value:GTIN}];
   Object.assign(a,relationRows("child",relationship));
   return a;
 }
@@ -130,9 +143,10 @@ function sum(r){
   const issues=Array.isArray(r?.body?.issues)?r.body.issues:[];
   const errors=issues.filter(i=>String(i?.severity||"").toUpperCase()==="ERROR");
   const status=String(r?.body?.status||"").toUpperCase();
-  return {httpStatus:r.http,responseOk:r.ok,status,issueCount:issues.length,errorCount:errors.length,issueCodes:[...new Set(issues.map(i=>String(i?.code||"")).filter(Boolean))],errors:errors.slice(0,10).map(i=>({code:String(i?.code||""),message:String(i?.message||"").slice(0,500),attributeNames:Array.isArray(i?.attributeNames)?i.attributeNames:[]})),valid:r.ok&&errors.length===0&&["VALID","ACCEPTED"].includes(status)};
+  return {httpStatus:r.http,responseOk:r.ok,status,submissionId:r?.body?.submissionId||"",issueCount:issues.length,errorCount:errors.length,issueCodes:[...new Set(issues.map(i=>String(i?.code||"")).filter(Boolean))],errors:errors.slice(0,10).map(i=>({code:String(i?.code||""),message:String(i?.message||"").slice(0,500),attributeNames:Array.isArray(i?.attributeNames)?i.attributeNames:[]})),valid:r.ok&&errors.length===0&&["VALID","ACCEPTED"].includes(status)};
 }
 async function runPreview(){
+  if(!validGtin13(GTIN))throw new Error(`GTIN_CHECK_DIGIT_INVALID ${GTIN}`);
   const a=await token();
   const listing=await getListing(a);if(!listing.ok)throw new Error(`source listing GET ${listing.http}`);
   const s=listing.body?.summaries?.[0]||{},attrs=listing.body?.attributes||{};
@@ -147,17 +161,17 @@ async function runPreview(){
   const relVals=values(nestedProp(schema,"child_parent_sku_relationship","child_relationship_type"));
   const relationship=relVals.find(v=>/variation/i.test(v));if(!relationship)throw new Error(`PTD_RELATIONSHIP_INVALID ${JSON.stringify(relVals)}`);
   const exclusive=pickBoolean(nestedProp(schema,"is_exclusive_product","value"),false,"is_exclusive_product.value");
-  const exemption=pickBoolean(nestedProp(schema,"supplier_declared_has_product_identifier_exemption","value"),true,"supplier_declared_has_product_identifier_exemption.value");
+  const identifier=pickIdentifierType(schema);
   const exclusiveRows=[{marketplace_id:MARKETPLACE_ID,value:exclusive.value}];
-  const exemptionRows=[{marketplace_id:MARKETPLACE_ID,value:exemption.value}];
   const child256=sum(await patchPreview(a,SOURCE_SKU,child256Patches(attrs,relationship,exclusiveRows)));
   const parent=sum(await putPreview(a,PARENT_SKU,parentAttrs(attrs,exclusiveRows)));
-  const child512=sum(await putPreview(a,CHILD512_SKU,child512Attrs(attrs,exclusiveRows,exemptionRows,relationship)));
+  const child512=sum(await putPreview(a,CHILD512_SKU,child512Attrs(attrs,exclusiveRows,identifier.selected,relationship)));
   const ready=parent.valid&&child256.valid&&child512.valid;
   return {
     ok:true,moduleVersion:MODULE_VERSION,route:ROUTE,readOnly:true,externalChanges:0,amazonPersistentWrites:0,status:ready?"PASS":"BLOCK",
     source:{sku:SOURCE_SKU,asin:SOURCE_ASIN,title:String(s.itemName||attrs?.item_name?.[0]?.value||""),productType:String(s.productType||"")},
-    schemaSelection:{variationTheme:THEME,relationship,parentageValues:parentVals,gtinExemptionAttributePresent:Boolean(nestedProp(schema,"supplier_declared_has_product_identifier_exemption","value")),gtinExemptionValue:exemption.value,gtinExemptionAllowedValues:exemption.allowed.slice(0,10),isExclusiveProductValue:exclusive.value},
+    identifier:{gtin:GTIN,checkDigitValid:true,type:identifier.selected,allowedTypes:identifier.allowed.slice(0,20)},
+    schemaSelection:{variationTheme:THEME,relationship,parentageValues:parentVals,isExclusiveProductValue:exclusive.value},
     preview:{parent,child256,child512},readyForLiveDesign:ready,
     next:ready?"PASS. Stop before LIVE and request explicit user approval.":"BLOCK. Inspect validation errors; no live mutation."
   };
@@ -171,15 +185,15 @@ async function handler(req,res){
     return res.status(200).json(await runPreview());
   }catch(err){return res.status(400).json({ok:false,moduleVersion:MODULE_VERSION,route:ROUTE,readOnly:true,externalChanges:0,amazonPersistentWrites:0,error:err?.message||String(err)});}
 }
-express.application.listen=function s73GtinExemptionPreviewListen(...args){
+express.application.listen=function s73GtinPreviewListen(...args){
   const exists=Boolean(this?._router?.stack?.some(layer=>layer?.route?.path===ROUTE));
   if(!exists)this.post(ROUTE,handler);
   const server=originalListen.apply(this,args);
   if(!autoRunStarted){
     autoRunStarted=true;
     setTimeout(async()=>{
-      try{console.log("S73_VARIATION_GTIN_EXEMPTION_PREVIEW_RESULT="+JSON.stringify(await runPreview()));}
-      catch(err){console.error("S73_VARIATION_GTIN_EXEMPTION_PREVIEW_ERROR="+(err?.message||String(err)));}
+      try{console.log("S73_VARIATION_GTIN_PREVIEW_RESULT="+JSON.stringify(await runPreview()));}
+      catch(err){console.error("S73_VARIATION_GTIN_PREVIEW_ERROR="+(err?.message||String(err)));}
     },2500);
   }
   return server;
