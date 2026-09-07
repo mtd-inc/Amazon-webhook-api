@@ -2,11 +2,13 @@ import express from "express";
 import fetch from "node-fetch";
 import "dotenv/config";
 
-const MODULE_VERSION = "2026-09-07-s73-variation-validation-preview-v1.0.0";
+const MODULE_VERSION = "2026-09-07-s73-variation-validation-preview-v1.0.1";
 const ROUTE = "/amazon/listing/s73-variation-validation-preview";
+const TRIGGER_ROUTE = "/amazon/listing/s73-variation-validation-preview-trigger-5e44fbc701b248c8";
 const MARKETPLACE_ID = "A1VC38T7YXB528";
 const REQUEST_TIMEOUT_MS = 20000;
 const originalListen = express.application.listen;
+let triggerConsumed = false;
 
 const G = Object.freeze({
   sourceSku: "7X-725F-2ZML",
@@ -157,6 +159,38 @@ function storageThemes(all){
   const rest=[...exact].sort((a,b)=>a.split("/").length-b.split("/").length||a.localeCompare(b));
   return [...out,...rest].slice(0,12);
 }
+async function runValidation(){
+  const accessToken=await token();
+  const src=assertSource(await listing(accessToken));
+  const s=await schema(accessToken);
+  const exclusive=exclusiveSelection(s);
+  const parentVals=values(nestedProp(s,"parentage_level","value"));
+  const relVals=values(nestedProp(s,"child_parent_sku_relationship","child_relationship_type"));
+  const themeVals=values(nestedProp(s,"variation_theme","name"));
+  const parentValue=pickEnum(parentVals,/^parent$/i,"parentage parent");
+  const childValue=pickEnum(parentVals,/^child$/i,"parentage child");
+  const relationshipValue=pickEnum(relVals,/variation/i,"child_relationship_type");
+  const parentage={parent:parentValue,child:childValue};
+  const candidates=storageThemes(themeVals);
+  if(!candidates.length)throw new Error("NO_HARD_DISK_SIZE_VARIATION_THEME");
+  const probes=[];let selected="";
+  for(const theme of candidates){
+    const childRel=relationRows(childValue,parentage,relationshipValue,theme);
+    const p=sum(await patchPreview(accessToken,G.sourceSku,child256Patches(childRel,exclusive.rows)));
+    probes.push({theme,valid:p.valid,httpStatus:p.httpStatus,errorCount:p.errorCount,issueCodes:p.issueCodes,errors:p.errors});
+    if(p.valid){selected=theme;break;}
+  }
+  if(!selected){
+    return {ok:true,moduleVersion:MODULE_VERSION,route:ROUTE,readOnly:true,externalChanges:0,amazonPersistentWrites:0,status:"BLOCK",sourceAudit:src.audit,reason:"NO_VALID_STORAGE_THEME_IN_PROBE_SET",schemaSelection:{parent:parentValue,child:childValue,relationship:relationshipValue,candidateCount:candidates.length,candidates},themeProbes:probes,readyForLiveDesign:false,next:"STOP. Review preview errors. No Amazon mutation occurred."};
+  }
+  const parentRel=relationRows(parentValue,parentage,relationshipValue,selected);
+  const childRel=relationRows(childValue,parentage,relationshipValue,selected);
+  const child256=sum(await patchPreview(accessToken,G.sourceSku,child256Patches(childRel,exclusive.rows)));
+  const parent=sum(await putPreview(accessToken,G.parentSku,buildParent(src.attributes,parentRel,exclusive.rows)));
+  const child512=sum(await putPreview(accessToken,G.child512Sku,build512(src.attributes,childRel,exclusive.rows)));
+  const ready=child256.valid&&parent.valid&&child512.valid;
+  return {ok:true,moduleVersion:MODULE_VERSION,route:ROUTE,readOnly:true,externalChanges:0,amazonPersistentWrites:0,status:ready?"PASS":"BLOCK",guards:{sourceSku:G.sourceSku,sourceAsin:G.sourceAsin,parentSku:G.parentSku,child512Sku:G.child512Sku,productType:G.productType,sourceGB:G.sourceGB,targetGB:G.targetGB},sourceAudit:src.audit,schemaSelection:{parent:parentValue,child:childValue,relationship:relationshipValue,selectedTheme:selected,storageThemeCandidateCount:candidates.length,candidates},exclusiveProduct:{selectedValue:exclusive.value,selectedValueType:exclusive.valueType,schemaType:exclusive.schemaType,allowedValues:exclusive.allowedValues},themeProbes:probes,preview:{parent,child256,child512},readyForLiveDesign:ready,next:ready?"Prepare a separately guarded LIVE route only after explicit user approval. Do not copy price/inventory decisions into LIVE without separate confirmation.":"STOP. Inspect validation errors; no live mutation."};
+}
 async function handler(req0,res){
   try{
     const sec=secret();
@@ -164,58 +198,25 @@ async function handler(req0,res){
     if(String(req0.headers["x-api-secret"]||"")!==sec)return res.status(401).json({ok:false,moduleVersion:MODULE_VERSION,route:ROUTE,readOnly:true,externalChanges:0,error:"Unauthorized"});
     if(req0.body?.dryRun===false)throw new Error("LIVE disabled; validation preview only");
     if(String(req0.body?.sourceSku||G.sourceSku)!==G.sourceSku||String(req0.body?.targetChildSku||G.child512Sku)!==G.child512Sku)throw new Error("GUARD_BLOCKED unexpected SKU");
-
-    const accessToken=await token();
-    const src=assertSource(await listing(accessToken));
-    const s=await schema(accessToken);
-    const exclusive=exclusiveSelection(s);
-    const parentVals=values(nestedProp(s,"parentage_level","value"));
-    const relVals=values(nestedProp(s,"child_parent_sku_relationship","child_relationship_type"));
-    const themeVals=values(nestedProp(s,"variation_theme","name"));
-    const parentValue=pickEnum(parentVals,/^parent$/i,"parentage parent");
-    const childValue=pickEnum(parentVals,/^child$/i,"parentage child");
-    const relationshipValue=pickEnum(relVals,/variation/i,"child_relationship_type");
-    const parentage={parent:parentValue,child:childValue};
-
-    const candidates=storageThemes(themeVals);
-    if(!candidates.length)throw new Error("NO_HARD_DISK_SIZE_VARIATION_THEME");
-    const probes=[];let selected="";
-    for(const theme of candidates){
-      const childRel=relationRows(childValue,parentage,relationshipValue,theme);
-      const p=sum(await patchPreview(accessToken,G.sourceSku,child256Patches(childRel,exclusive.rows)));
-      probes.push({theme,valid:p.valid,httpStatus:p.httpStatus,errorCount:p.errorCount,issueCodes:p.issueCodes,errors:p.errors});
-      if(p.valid){selected=theme;break;}
-    }
-    if(!selected){
-      return res.status(200).json({ok:true,moduleVersion:MODULE_VERSION,route:ROUTE,readOnly:true,externalChanges:0,amazonPersistentWrites:0,status:"BLOCK",sourceAudit:src.audit,reason:"NO_VALID_STORAGE_THEME_IN_PROBE_SET",schemaSelection:{parent:parentValue,child:childValue,relationship:relationshipValue,candidateCount:candidates.length,candidates},themeProbes:probes,readyForLiveDesign:false,next:"STOP. Review preview errors. No Amazon mutation occurred."});
-    }
-
-    const parentRel=relationRows(parentValue,parentage,relationshipValue,selected);
-    const childRel=relationRows(childValue,parentage,relationshipValue,selected);
-    const child256=sum(await patchPreview(accessToken,G.sourceSku,child256Patches(childRel,exclusive.rows)));
-    const parent=sum(await putPreview(accessToken,G.parentSku,buildParent(src.attributes,parentRel,exclusive.rows)));
-    const child512=sum(await putPreview(accessToken,G.child512Sku,build512(src.attributes,childRel,exclusive.rows)));
-    const ready=child256.valid&&parent.valid&&child512.valid;
-
-    return res.status(200).json({
-      ok:true,moduleVersion:MODULE_VERSION,route:ROUTE,readOnly:true,externalChanges:0,amazonPersistentWrites:0,
-      status:ready?"PASS":"BLOCK",
-      guards:{sourceSku:G.sourceSku,sourceAsin:G.sourceAsin,parentSku:G.parentSku,child512Sku:G.child512Sku,productType:G.productType,sourceGB:G.sourceGB,targetGB:G.targetGB},
-      sourceAudit:src.audit,
-      schemaSelection:{parent:parentValue,child:childValue,relationship:relationshipValue,selectedTheme:selected,storageThemeCandidateCount:candidates.length,candidates},
-      exclusiveProduct:{selectedValue:exclusive.value,selectedValueType:exclusive.valueType,schemaType:exclusive.schemaType,allowedValues:exclusive.allowedValues},
-      themeProbes:probes,
-      preview:{parent,child256,child512},
-      readyForLiveDesign:ready,
-      next:ready?"Prepare a separately guarded LIVE route only after explicit user approval. Do not copy price/inventory decisions into LIVE without separate confirmation.":"STOP. Inspect validation errors; no live mutation."
-    });
+    return res.status(200).json(await runValidation());
   }catch(err){
     return res.status(400).json({ok:false,moduleVersion:MODULE_VERSION,route:ROUTE,readOnly:true,externalChanges:0,amazonPersistentWrites:0,error:err?.message||String(err)});
   }
 }
+async function triggerHandler(_req,res){
+  try{
+    if(triggerConsumed)return res.status(409).json({ok:false,error:"ONE_TIME_TRIGGER_ALREADY_CONSUMED"});
+    triggerConsumed=true;
+    return res.status(200).json(await runValidation());
+  }catch(err){
+    return res.status(400).json({ok:false,moduleVersion:MODULE_VERSION,route:TRIGGER_ROUTE,readOnly:true,externalChanges:0,amazonPersistentWrites:0,error:err?.message||String(err)});
+  }
+}
 
 express.application.listen=function s73VariationValidationPreviewListen(...args){
-  const exists=Boolean(this?._router?.stack?.some(layer=>layer?.route?.path===ROUTE));
-  if(!exists)this.post(ROUTE,handler);
+  const postExists=Boolean(this?._router?.stack?.some(layer=>layer?.route?.path===ROUTE));
+  if(!postExists)this.post(ROUTE,handler);
+  const triggerExists=Boolean(this?._router?.stack?.some(layer=>layer?.route?.path===TRIGGER_ROUTE));
+  if(!triggerExists)this.get(TRIGGER_ROUTE,triggerHandler);
   return originalListen.apply(this,args);
 };
