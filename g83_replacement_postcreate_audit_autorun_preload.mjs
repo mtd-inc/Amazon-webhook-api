@@ -2,7 +2,7 @@ import express from "express";
 import fetch from "node-fetch";
 import "dotenv/config";
 
-const VERSION="2026-09-09-g83-replacement-relation-live-v1.0.0";
+const VERSION="2026-09-09-g83-replacement-relation-live-v1.0.1";
 const MP="A1VC38T7YXB528";
 const PT="NOTEBOOK_COMPUTER";
 const PARENT_SKU="g83-hs-i5-11g-variation-parent";
@@ -33,7 +33,8 @@ function childAttached(t,s){return s.ok&&s.asin===t.asin&&s.productType===PT&&s.
 function relationPatches(at){const op=k=>Array.isArray(at?.[k])&&at[k].length?"replace":"add";return[
  {op:op("parentage_level"),path:"/attributes/parentage_level",value:[{marketplace_id:MP,value:"child"}]},
  {op:op("variation_theme"),path:"/attributes/variation_theme",value:[{name:THEME}]},
- {op:op("child_parent_sku_relationship"),path:"/attributes/child_parent_sku_relationship",value:[{marketplace_id:MP,child_relationship_type:"variation",parent_sku:PARENT_SKU}]}
+ {op:op("child_parent_sku_relationship"),path:"/attributes/child_parent_sku_relationship",value:[{marketplace_id:MP,child_relationship_type:"variation",parent_sku:PARENT_SKU}]},
+ {op:op("is_exclusive_product"),path:"/attributes/is_exclusive_product",value:[{marketplace_id:MP,value:false}]}
 ]}
 function sum(r){const issues=Array.isArray(r?.body?.issues)?r.body.issues:[],errors=issues.filter(i=>String(i?.severity||"").toUpperCase()==="ERROR"),status=String(r?.body?.status||"").toUpperCase();return{httpStatus:r.http,status,errorCount:errors.length,errors:errors.map(i=>({code:i.code,message:String(i.message||"").slice(0,500),attributeNames:i.attributeNames||[]})),valid:r.ok&&errors.length===0&&["VALID","ACCEPTED"].includes(status)}}
 function relAsins(node){const out=[];(function w(v,d){if(v==null||d>10)return;if(typeof v==="string"&&/^[A-Z0-9]{10}$/.test(v))out.push(v);else if(Array.isArray(v))v.forEach(x=>w(x,d+1));else if(typeof v==="object")Object.values(v).forEach(x=>w(x,d+1))})(node,0);return[...new Set(out)].sort()}
