@@ -1,11 +1,20 @@
 import express from "express";
 import fetch from "node-fetch";
+import crypto from "crypto";
 import "dotenv/config";
 
-const MODULE_VERSION = "2026-08-26-amazon-image-suppression-preview-v1.0.0";
+const MODULE_VERSION = "2026-09-10-amazon-image-suppression-preview-v1.1.0";
 const ROUTE = "/amazon/listing/image-suppression-repair-preview";
 const REQUEST_TIMEOUT_MS = 20000;
 const originalListen = express.application.listen;
+
+const CF_SV8_AUTORUN = Object.freeze({
+  sku: "cf-sv8-i5-8gb-ssd512",
+  asin: "B0GH7GWDVP",
+  issueCode: "100238",
+  pt: 6,
+  attributeName: "other_product_image_locator_5",
+});
 
 function safeJsonParse(text) {
   if (!text) return {};
@@ -77,6 +86,21 @@ async function getListing(accessToken, sku) {
   return json;
 }
 
+async function getCatalog(accessToken, asin) {
+  const { marketplaceId, endpoint } = getConfig();
+  const query = new URLSearchParams({
+    marketplaceIds: marketplaceId,
+    includedData: "images,summaries,productTypes",
+  });
+  const url = `${endpoint}/catalog/2022-04-01/items/${encodeURIComponent(asin)}?${query}`;
+  const response = await fetchWithTimeout(url, {
+    method: "GET",
+    headers: { "x-amz-access-token": accessToken, accept: "application/json" },
+  });
+  const json = safeJsonParse(await response.text());
+  return { httpStatus: response.status, ok: response.ok, body: json };
+}
+
 function imageAttributeFromPt(pt) {
   if (!Number.isInteger(pt) || pt < 1) return "";
   if (pt === 1) return "main_product_image_locator";
@@ -131,6 +155,21 @@ function buildDeletePlan(listing) {
   return plannedDeletes;
 }
 
+function buildPreviewBody(productType, plannedDeletes) {
+  return {
+    productType,
+    patches: plannedDeletes.map(item => ({
+      op: "delete",
+      path: item.path,
+      value: item.value,
+    })),
+  };
+}
+
+function sha256(value) {
+  return crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
+}
+
 async function validationPreview(accessToken, sku, productType, plannedDeletes) {
   const { sellerId, marketplaceId, endpoint } = getConfig();
   const query = new URLSearchParams({
@@ -140,14 +179,7 @@ async function validationPreview(accessToken, sku, productType, plannedDeletes) 
     mode: "VALIDATION_PREVIEW",
   });
 
-  const body = {
-    productType,
-    patches: plannedDeletes.map(item => ({
-      op: "delete",
-      path: item.path,
-      value: item.value,
-    })),
-  };
+  const body = buildPreviewBody(productType, plannedDeletes);
 
   const url = `${endpoint}/listings/2021-08-01/items/${encodeURIComponent(sellerId)}/${encodeURIComponent(sku)}?${query}`;
   const response = await fetchWithTimeout(url, {
@@ -174,7 +206,110 @@ async function validationPreview(accessToken, sku, productType, plannedDeletes) 
     issues,
     errorCount: errors.length,
     validationPassed,
+    requestBodySha256: sha256(body),
     raw: json,
+  };
+}
+
+function listingImageSnapshot(listing) {
+  const attributes = listing?.attributes && typeof listing.attributes === "object" ? listing.attributes : {};
+  return Object.keys(attributes)
+    .filter(name => /product_image_locator/i.test(name))
+    .sort()
+    .map(attributeName => ({
+      attributeName,
+      values: Array.isArray(attributes[attributeName]) ? attributes[attributeName] : [],
+    }));
+}
+
+function catalogImageSnapshot(catalogBody) {
+  const out = [];
+  const groups = Array.isArray(catalogBody?.images) ? catalogBody.images : [];
+  for (const group of groups) {
+    const images = Array.isArray(group?.images) ? group.images : [];
+    for (const image of images) {
+      out.push({
+        marketplaceId: String(group?.marketplaceId || ""),
+        variant: String(image?.variant || ""),
+        link: String(image?.link || ""),
+        height: image?.height ?? null,
+        width: image?.width ?? null,
+      });
+    }
+  }
+  return out;
+}
+
+async function runCfSv8Autorun() {
+  const accessToken = await getLwaAccessToken();
+  const listing = await getListing(accessToken, CF_SV8_AUTORUN.sku);
+  const summary = Array.isArray(listing?.summaries) ? listing.summaries[0] || {} : {};
+  const asin = String(summary?.asin || "").trim();
+  const productType = String(summary?.productType || "").trim();
+  const status = Array.isArray(summary?.status) ? summary.status.map(String) : [];
+  const issues = Array.isArray(listing?.issues) ? listing.issues : [];
+  const errorIssues = issues.filter(issue => String(issue?.severity || "").toUpperCase() === "ERROR");
+
+  if (asin !== CF_SV8_AUTORUN.asin) throw new Error(`CF_SV8_GUARD_ASIN_MISMATCH:${asin}`);
+  if (!productType) throw new Error("CF_SV8_GUARD_PRODUCT_TYPE_MISSING");
+
+  const targetIssue = errorIssues.find(issue =>
+    String(issue?.code || "") === CF_SV8_AUTORUN.issueCode &&
+    /PT\s*0*6/i.test(String(issue?.message || ""))
+  );
+  if (!targetIssue) throw new Error("CF_SV8_GUARD_PT06_100238_NOT_FOUND");
+
+  const plannedDeletes = buildDeletePlan(listing);
+  if (plannedDeletes.length !== 1) throw new Error(`CF_SV8_GUARD_DELETE_COUNT:${plannedDeletes.length}`);
+  const planned = plannedDeletes[0];
+  if (planned.pt !== CF_SV8_AUTORUN.pt || planned.attributeName !== CF_SV8_AUTORUN.attributeName) {
+    throw new Error(`CF_SV8_GUARD_SLOT_MISMATCH:${planned.pt}:${planned.attributeName}`);
+  }
+
+  const catalog = await getCatalog(accessToken, asin);
+  const preview = await validationPreview(accessToken, CF_SV8_AUTORUN.sku, productType, plannedDeletes);
+
+  return {
+    status: preview.validationPassed ? "CF_SV8_100238_PT06_VALIDATION_PREVIEW_PASS" : "CF_SV8_100238_PT06_VALIDATION_PREVIEW_BLOCK",
+    moduleVersion: MODULE_VERSION,
+    readOnlyFreshAudit: true,
+    validationPreviewOnly: true,
+    sku: CF_SV8_AUTORUN.sku,
+    asin,
+    productType,
+    listingStatus: status,
+    buyable: status.includes("BUYABLE"),
+    discoverable: status.includes("DISCOVERABLE"),
+    currentErrorCount: errorIssues.length,
+    currentIssues: issues.map(issue => ({
+      code: String(issue?.code || ""),
+      severity: String(issue?.severity || ""),
+      message: String(issue?.message || ""),
+      attributeNames: Array.isArray(issue?.attributeNames) ? issue.attributeNames : [],
+    })),
+    listingImages: listingImageSnapshot(listing),
+    catalogHttpStatus: catalog.httpStatus,
+    catalogOk: catalog.ok,
+    catalogImages: catalogImageSnapshot(catalog.body),
+    plannedDelete: planned,
+    preview: {
+      httpStatus: preview.httpStatus,
+      responseOk: preview.responseOk,
+      status: preview.status,
+      submissionId: preview.submissionId,
+      errorCount: preview.errorCount,
+      issues: preview.issues,
+      validationPassed: preview.validationPassed,
+      requestBodySha256: preview.requestBodySha256,
+    },
+    amazonPersistentWrites: 0,
+    inventoryWrites: 0,
+    priceWrites: 0,
+    b2bWrites: 0,
+    adsWrites: 0,
+    yahooWrites: 0,
+    variationRelationWrites: 0,
+    externalChanges: 0,
   };
 }
 
@@ -222,6 +357,7 @@ async function handler(req, res) {
         submissionId: preview.submissionId,
         errorCount: preview.errorCount,
         issues: preview.issues,
+        requestBodySha256: preview.requestBodySha256,
       },
       externalChanges: 0,
       note: "VALIDATION_PREVIEW only. No Amazon listing mutation was persisted by this route.",
@@ -241,5 +377,24 @@ async function handler(req, res) {
 express.application.listen = function amazonImageSuppressionPreviewListen(...args) {
   const alreadyRegistered = Boolean(this?._router?.stack?.some(layer => layer?.route?.path === ROUTE));
   if (!alreadyRegistered) this.post(ROUTE, handler);
-  return originalListen.apply(this, args);
+  const server = originalListen.apply(this, args);
+  setTimeout(async () => {
+    try {
+      console.log(`CF_SV8_100238_PREVIEW_RESULT=${JSON.stringify(await runCfSv8Autorun())}`);
+    } catch (err) {
+      console.error(`CF_SV8_100238_PREVIEW_ERROR=${JSON.stringify({
+        moduleVersion: MODULE_VERSION,
+        error: err?.message || String(err),
+        amazonPersistentWrites: 0,
+        inventoryWrites: 0,
+        priceWrites: 0,
+        b2bWrites: 0,
+        adsWrites: 0,
+        yahooWrites: 0,
+        variationRelationWrites: 0,
+        externalChanges: 0,
+      })}`);
+    }
+  }, 5000);
+  return server;
 };
