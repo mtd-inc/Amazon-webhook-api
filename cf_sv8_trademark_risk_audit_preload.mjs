@@ -1,3 +1,4 @@
+import "./cf_sv8_trademark_image_proxy_preload.mjs";
 import "./cf_sv8_18653_common_image_probe_preview_preload.mjs";
 import fetch from "node-fetch";
 import "dotenv/config";
@@ -55,11 +56,7 @@ function imageMap(attributes) {
   for (const key of keys) {
     const vals = Array.isArray(attributes[key]) ? attributes[key] : [];
     for (const v of vals) {
-      out.push({
-        attribute: key,
-        url: v?.media_location || v?.value || "",
-        marketplaceId: v?.marketplace_id || "",
-      });
+      out.push({ attribute: key, url: v?.media_location || v?.value || "", marketplaceId: v?.marketplace_id || "" });
     }
   }
   return out;
@@ -79,38 +76,15 @@ async function run() {
     const issues = Array.isArray(x?.issues) ? x.issues : [];
     const errors = issues.filter(i => String(i?.severity || "").toUpperCase() === "ERROR");
     results.push({
-      sku: target.sku,
-      expectedAsin: target.asin,
-      asin: s.asin || "",
-      asinMatches: (s.asin || "") === target.asin,
-      productType: s.productType || "",
-      statuses: Array.isArray(s.status) ? s.status : [],
-      itemName: s.itemName || "",
-      brand: values(a, "brand"),
-      manufacturer: values(a, "manufacturer"),
-      model: values(a, "model_name").concat(values(a, "model_number")),
-      images: imageMap(a),
-      imageCount: imageMap(a).length,
-      errorCount: errors.length,
-      issues,
+      sku: target.sku, expectedAsin: target.asin, asin: s.asin || "", asinMatches: (s.asin || "") === target.asin,
+      productType: s.productType || "", statuses: Array.isArray(s.status) ? s.status : [], itemName: s.itemName || "",
+      brand: values(a, "brand"), manufacturer: values(a, "manufacturer"), model: values(a, "model_name").concat(values(a, "model_number")),
+      images: imageMap(a), imageCount: imageMap(a).length, errorCount: errors.length, issues,
       fulfillmentAvailability: Array.isArray(x?.fulfillmentAvailability) ? x.fulfillmentAvailability : [],
       offers: Array.isArray(x?.offers) ? x.offers : [],
     });
   }
-  console.log(`${TAG}=${JSON.stringify({
-    status: "CF_SV8_TRADEMARK_RISK_AUDIT_COMPLETE",
-    moduleVersion: MODULE_VERSION,
-    readOnly: true,
-    marketplaceId: MARKETPLACE_ID,
-    results,
-    amazonPersistentWrites: 0,
-    inventoryWrites: 0,
-    priceWrites: 0,
-    b2bWrites: 0,
-    adsWrites: 0,
-    yahooWrites: 0,
-    externalChanges: 0,
-  })}`);
+  console.log(`${TAG}=${JSON.stringify({ status: "CF_SV8_TRADEMARK_RISK_AUDIT_COMPLETE", moduleVersion: MODULE_VERSION, readOnly: true, marketplaceId: MARKETPLACE_ID, results, amazonPersistentWrites: 0, inventoryWrites: 0, priceWrites: 0, b2bWrites: 0, adsWrites: 0, yahooWrites: 0, externalChanges: 0 })}`);
 }
 
 run().catch(e => console.error(`${ERR}=${JSON.stringify({ status: "FAILED", moduleVersion: MODULE_VERSION, readOnly: true, error: e?.message || String(e), amazonPersistentWrites: 0, externalChanges: 0 })}`));
