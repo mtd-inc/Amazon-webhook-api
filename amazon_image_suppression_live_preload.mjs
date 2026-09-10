@@ -1,20 +1,23 @@
 import express from "express";
 import fetch from "node-fetch";
+import crypto from "crypto";
 import "dotenv/config";
 
-const MODULE_VERSION = "2026-08-26-amazon-image-suppression-live-v1.0.0";
+const MODULE_VERSION = "2026-09-10-cf-sv8-100238-pt06-live-v1.0.0";
 const ROUTE = "/amazon/listing/image-suppression-repair-live";
 const REQUEST_TIMEOUT_MS = 20000;
 const originalListen = express.application.listen;
 
 const LIVE_GUARD = Object.freeze({
-  sku: "x13g1-i5-10210u-8gb-ssd512",
-  asin: "B0GHY4ZS4K",
+  sku: "cf-sv8-i5-8gb-ssd512",
+  asin: "B0GH7GWDVP",
+  productType: "NOTEBOOK_COMPUTER",
   issueCode: "100238",
   pt: 6,
   attributeName: "other_product_image_locator_5",
   mediaLocation: "https://m.media-amazon.com/images/I/61SY9FiCT8L.jpg",
-  confirmToken: "CONFIRM_X13_PT06_DELETE_20260826",
+  previewBodySha256: "d41f75171a2fb8a12a056f6b7792a0abc48b8b25ebc9430221edfb1df04cee14",
+  confirmToken: "CONFIRM_CF_SV8_PT06_DELETE_20260910",
 });
 
 function safeJsonParse(text) {
@@ -31,6 +34,7 @@ function getConfig() {
   const marketplaceId = String(process.env.SPAPI_MARKETPLACE_ID || "A1VC38T7YXB528").trim();
   const endpoint = String(process.env.SPAPI_ENDPOINT || "https://sellingpartnerapi-fe.amazon.com").replace(/\/$/, "");
   if (!sellerId) throw new Error("Missing env: SPAPI_SELLER_ID");
+  if (marketplaceId !== "A1VC38T7YXB528") throw new Error(`LIVE_GUARD_BLOCKED: marketplace mismatch ${marketplaceId}`);
   return { sellerId, marketplaceId, endpoint };
 }
 
@@ -88,17 +92,25 @@ function resolveGuardedDelete(listing) {
   const summary = summaries[0] || {};
   const asin = String(summary?.asin || "").trim();
   const productType = String(summary?.productType || "").trim();
+  const statuses = Array.isArray(summary?.status) ? summary.status.map(String) : [];
+
   if (asin !== LIVE_GUARD.asin) throw new Error(`LIVE_GUARD_BLOCKED: ASIN mismatch ${asin}`);
-  if (!productType) throw new Error("LIVE_GUARD_BLOCKED: productType missing");
+  if (productType !== LIVE_GUARD.productType) throw new Error(`LIVE_GUARD_BLOCKED: productType mismatch ${productType}`);
+  if (!statuses.includes("BUYABLE") || !statuses.includes("DISCOVERABLE")) {
+    throw new Error(`LIVE_GUARD_BLOCKED: listing status changed ${JSON.stringify(statuses)}`);
+  }
 
   const issues = Array.isArray(listing?.issues) ? listing.issues : [];
-  const issue = issues.find(item => {
-    const code = String(item?.code || "");
-    const severity = String(item?.severity || "").toUpperCase();
-    const message = String(item?.message || "");
-    return code === LIVE_GUARD.issueCode && severity === "ERROR" && /PT\s*0*6/i.test(message);
-  });
-  if (!issue) throw new Error("LIVE_GUARD_BLOCKED: current PT06 issue 100238 ERROR not found");
+  const errors = issues.filter(item => String(item?.severity || "").toUpperCase() === "ERROR");
+  if (errors.length !== 1) throw new Error(`LIVE_GUARD_BLOCKED: expected exactly one ERROR, got ${errors.length}`);
+
+  const issue = errors[0];
+  const code = String(issue?.code || "");
+  const message = String(issue?.message || "");
+  const attributeNames = Array.isArray(issue?.attributeNames) ? issue.attributeNames.map(String) : [];
+  if (code !== LIVE_GUARD.issueCode || !/PT\s*0*6/i.test(message) || !attributeNames.includes("media_locator")) {
+    throw new Error(`LIVE_GUARD_BLOCKED: target issue changed ${JSON.stringify({ code, message, attributeNames })}`);
+  }
 
   const values = listing?.attributes?.[LIVE_GUARD.attributeName];
   if (!Array.isArray(values) || values.length !== 1) {
@@ -109,11 +121,22 @@ function resolveGuardedDelete(listing) {
     throw new Error(`LIVE_GUARD_BLOCKED: media URL mismatch ${media}`);
   }
 
+  return { productType, value: values, issueMessage: message, statuses };
+}
+
+function buildBody(productType, value) {
   return {
     productType,
-    value: values,
-    issueMessage: String(issue?.message || ""),
+    patches: [{
+      op: "delete",
+      path: `/attributes/${LIVE_GUARD.attributeName}`,
+      value,
+    }],
   };
+}
+
+function sha256(value) {
+  return crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
 
 async function patchDelete(accessToken, sku, productType, value, validationPreview) {
@@ -125,14 +148,11 @@ async function patchDelete(accessToken, sku, productType, value, validationPrevi
   });
   if (validationPreview) query.set("mode", "VALIDATION_PREVIEW");
 
-  const body = {
-    productType,
-    patches: [{
-      op: "delete",
-      path: `/attributes/${LIVE_GUARD.attributeName}`,
-      value,
-    }],
-  };
+  const body = buildBody(productType, value);
+  const bodySha256 = sha256(body);
+  if (bodySha256 !== LIVE_GUARD.previewBodySha256) {
+    throw new Error(`LIVE_GUARD_BLOCKED: payload SHA mismatch ${bodySha256}`);
+  }
 
   const url = `${endpoint}/listings/2021-08-01/items/${encodeURIComponent(sellerId)}/${encodeURIComponent(sku)}?${query}`;
   const response = await fetchWithTimeout(url, {
@@ -157,23 +177,26 @@ async function patchDelete(accessToken, sku, productType, value, validationPrevi
     issues,
     errorCount: errorIssues.length,
     valid: response.ok && errorIssues.length === 0 && (status === "VALID" || status === "ACCEPTED"),
+    bodySha256,
     raw: json,
   };
 }
 
 async function handler(req, res) {
-  let externalChanges = 0;
+  let amazonPersistentWrites = 0;
   try {
     const secret = getSecret();
-    if (!secret) return res.status(500).json({ ok: false, externalChanges: 0, error: "AMAZON_STOCK_API_SECRET is not set" });
+    if (!secret) return res.status(500).json({ ok: false, amazonPersistentWrites: 0, externalChanges: 0, error: "AMAZON_STOCK_API_SECRET is not set" });
     if (String(req.headers["x-api-secret"] || "") !== secret) {
-      return res.status(401).json({ ok: false, externalChanges: 0, error: "Unauthorized" });
+      return res.status(401).json({ ok: false, amazonPersistentWrites: 0, externalChanges: 0, error: "Unauthorized" });
     }
 
     const sku = String(req.body?.sku || "").trim();
     const confirmToken = String(req.body?.confirmToken || "").trim();
+    const expectedPreviewSha256 = String(req.body?.expectedPreviewSha256 || "").trim();
     if (sku !== LIVE_GUARD.sku) throw new Error("LIVE_GUARD_BLOCKED: unexpected SKU");
     if (confirmToken !== LIVE_GUARD.confirmToken) throw new Error("LIVE_GUARD_BLOCKED: confirmation token mismatch");
+    if (expectedPreviewSha256 !== LIVE_GUARD.previewBodySha256) throw new Error("LIVE_GUARD_BLOCKED: expected preview SHA mismatch");
 
     const accessToken = await getLwaAccessToken();
     const listing = await getListing(accessToken, sku);
@@ -184,8 +207,16 @@ async function handler(req, res) {
       throw new Error(`LIVE_GUARD_BLOCKED: fresh validation preview failed ${JSON.stringify(preview.raw)}`);
     }
 
-    const live = await patchDelete(accessToken, sku, target.productType, target.value, false);
-    externalChanges = 1;
+    // Re-read immediately before LIVE so a changed issue/image cannot pass on stale state.
+    const listingFresh = await getListing(accessToken, sku);
+    const targetFresh = resolveGuardedDelete(listingFresh);
+    const freshBodySha256 = sha256(buildBody(targetFresh.productType, targetFresh.value));
+    if (freshBodySha256 !== LIVE_GUARD.previewBodySha256) {
+      throw new Error(`LIVE_GUARD_BLOCKED: fresh payload SHA mismatch ${freshBodySha256}`);
+    }
+
+    const live = await patchDelete(accessToken, sku, targetFresh.productType, targetFresh.value, false);
+    amazonPersistentWrites = 1;
 
     return res.status(200).json({
       ok: true,
@@ -193,10 +224,12 @@ async function handler(req, res) {
       route: ROUTE,
       sku,
       asin: LIVE_GUARD.asin,
+      productType: LIVE_GUARD.productType,
       issueCode: LIVE_GUARD.issueCode,
       pt: LIVE_GUARD.pt,
       attributeName: LIVE_GUARD.attributeName,
       mediaLocation: LIVE_GUARD.mediaLocation,
+      previewBodySha256: LIVE_GUARD.previewBodySha256,
       preflightValidationPassed: true,
       preview: {
         httpStatus: preview.httpStatus,
@@ -204,6 +237,7 @@ async function handler(req, res) {
         submissionId: preview.submissionId,
         errorCount: preview.errorCount,
         issues: preview.issues,
+        bodySha256: preview.bodySha256,
       },
       live: {
         httpStatus: live.httpStatus,
@@ -212,10 +246,18 @@ async function handler(req, res) {
         submissionId: live.submissionId,
         errorCount: live.errorCount,
         issues: live.issues,
+        bodySha256: live.bodySha256,
         accepted: Boolean(live.responseOk && live.valid),
       },
-      externalChanges,
-      note: "One guarded live delete was sent. Do not resend solely because issue/status propagation is delayed.",
+      amazonPersistentWrites,
+      inventoryWrites: 0,
+      priceWrites: 0,
+      b2bWrites: 0,
+      adsWrites: 0,
+      yahooWrites: 0,
+      variationRelationWrites: 0,
+      externalChanges: amazonPersistentWrites,
+      note: "Exactly one guarded PT06 attribute delete may be sent. No inventory/price/B2B/Ads/Yahoo/variation mutation is implemented here.",
     });
   } catch (err) {
     console.error("Amazon image suppression live repair error", err?.message || String(err));
@@ -223,7 +265,14 @@ async function handler(req, res) {
       ok: false,
       moduleVersion: MODULE_VERSION,
       route: ROUTE,
-      externalChanges,
+      amazonPersistentWrites,
+      inventoryWrites: 0,
+      priceWrites: 0,
+      b2bWrites: 0,
+      adsWrites: 0,
+      yahooWrites: 0,
+      variationRelationWrites: 0,
+      externalChanges: amazonPersistentWrites,
       error: err?.message || String(err),
     });
   }
