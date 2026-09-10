@@ -1,3 +1,4 @@
+import "./cf_sv8_trademark_risk_audit_preload.mjs";
 import fetch from "node-fetch";
 import "dotenv/config";
 
