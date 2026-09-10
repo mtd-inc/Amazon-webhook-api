@@ -1,15 +1,15 @@
 import fetch from "node-fetch";
 import "dotenv/config";
 
-const MODULE_VERSION = "2026-09-10-cf-sv8-18653-common-image-probe-preview-v1.0.0";
-const TAG = "CF_SV8_18653_COMMON_IMAGE_PROBE_PREVIEW_RESULT";
-const ERR = "CF_SV8_18653_COMMON_IMAGE_PROBE_PREVIEW_ERROR";
+const MODULE_VERSION = "2026-09-10-cf-sv8-18653-image1-probe-preview-v1.0.0";
+const TAG = "CF_SV8_18653_IMAGE1_PROBE_PREVIEW_RESULT";
+const ERR = "CF_SV8_18653_IMAGE1_PROBE_PREVIEW_ERROR";
 const MARKETPLACE_ID = "A1VC38T7YXB528";
 const TARGETS = Object.freeze([
   Object.freeze({ sku: "cf-sv8-i5-8gb-ssd1", asin: "B0GH7CDB3Y" }),
   Object.freeze({ sku: "cf-sv8-i5-8gb-ssd256", asin: "B0GH792325" }),
 ]);
-const CANDIDATES = Object.freeze([4,5,6]);
+const CANDIDATES = Object.freeze([1]);
 
 const parse = t => { try { return t ? JSON.parse(t) : {}; } catch { return { rawText: String(t).slice(0,4000) }; } };
 function cfg(){
@@ -40,7 +40,7 @@ async function previewDelete(a,target,productType,attributeName,value){
   const j=parse(await r.text());
   const issues=Array.isArray(j?.issues)?j.issues:[];
   const errors=issues.filter(x=>String(x?.severity||"").toUpperCase()==="ERROR");
-  return {httpStatus:r.status,responseOk:r.ok,status:String(j?.status||""),submissionId:String(j?.submissionId||""),errorCount:errors.length,issueCodes:errors.map(x=>String(x?.code||"")),issues};
+  return {httpStatus:r.status,responseOk:r.ok,status:String(j?.status||""),submissionId:String(j?.submissionId||""),errorCount:errors.length,issueCodes:errors.map(x=>String(x?.code||"")),issues,requestBody:body};
 }
 async function run(){
   const a=await lwa(); const results=[];
@@ -58,10 +58,10 @@ async function run(){
       if(!Array.isArray(raw)||raw.length!==1) { probes.push({slot:n,attributeName,skipped:true,reason:"ATTRIBUTE_NOT_SINGLETON"}); continue; }
       const value=raw.map(v=>({media_location:String(v?.media_location||""),marketplace_id:String(v?.marketplace_id||MARKETPLACE_ID)}));
       const preview=await previewDelete(a,target,productType,attributeName,value);
-      probes.push({slot:n,attributeName,mediaLocation:value[0].media_location,preview,removes18653:!preview.issueCodes.includes("18653")});
+      probes.push({slot:n,attributeName,mediaLocation:value[0].media_location,preview});
     }
     results.push({sku:target.sku,asin,statuses:Array.isArray(s?.status)?s.status:[],freshErrorCodes:errors.map(x=>String(x?.code||"")),probes});
   }
-  console.log(`${TAG}=${JSON.stringify({status:"CF_SV8_18653_COMMON_IMAGE_PROBE_PREVIEW_COMPLETE",moduleVersion:MODULE_VERSION,validationPreviewOnly:true,liveImplemented:false,results,amazonPersistentWrites:0,inventoryWrites:0,priceWrites:0,b2bWrites:0,adsWrites:0,yahooWrites:0,externalChanges:0})}`);
+  console.log(`${TAG}=${JSON.stringify({status:"CF_SV8_18653_IMAGE1_PROBE_PREVIEW_COMPLETE",moduleVersion:MODULE_VERSION,validationPreviewOnly:true,liveImplemented:false,results,amazonPersistentWrites:0,inventoryWrites:0,priceWrites:0,b2bWrites:0,adsWrites:0,yahooWrites:0,externalChanges:0})}`);
 }
 run().catch(e=>console.error(`${ERR}=${JSON.stringify({status:"FAILED",moduleVersion:MODULE_VERSION,validationPreviewOnly:true,liveImplemented:false,error:e?.message||String(e),amazonPersistentWrites:0,externalChanges:0})}`));
