@@ -2,18 +2,19 @@ import express from "express";
 import fetch from "node-fetch";
 import "dotenv/config";
 
-const VERSION = "2026-09-10-g83-zero-cutover-preflight-v1.0.0";
+const VERSION = "2026-09-10-g83-zero-cutover-live-v1.0.0";
 const FRESH = "/amazon/stock/fresh-get";
 const ORDERS = "/amazon/orders/fresh-gate";
 const UPDATE = "/amazon/stock/update";
 const TARGETS = [
-  { role: "LEGACY_SUB_256", sku: "g83-i5-11-8gb-ssd256", asin: "B0GN84QRCF", target: 0 },
-  { role: "HEALTHY_CHILD_512", sku: "SO-9QJ3-7SHR", asin: "B0FPC2JKBY", target: 0 },
-  { role: "RETIRED_BAD_256", sku: "F7-AF7O-IGX5", asin: "B0FN3KQFR3", target: 0 },
-  { role: "RETIRED_BAD_1TB", sku: "9K-D0RA-4R8V", asin: "B0FPC4R7ZG", target: 0 }
+  { role: "LEGACY_SUB_256", sku: "g83-i5-11-8gb-ssd256", asin: "B0GN84QRCF", before: 4, target: 0, allowedIssueCodes: [] },
+  { role: "HEALTHY_CHILD_512", sku: "SO-9QJ3-7SHR", asin: "B0FPC2JKBY", before: 4, target: 0, allowedIssueCodes: [] },
+  { role: "RETIRED_BAD_256", sku: "F7-AF7O-IGX5", asin: "B0FN3KQFR3", before: 4, target: 0, allowedIssueCodes: ["18653"] },
+  { role: "RETIRED_BAD_1TB", sku: "9K-D0RA-4R8V", asin: "B0FPC4R7ZG", before: 3, target: 0, allowedIssueCodes: ["18653"] }
 ];
 const REPLACEMENT = { sku: "g83-hs-i5-11g-8gb-ssd256-r1", asin: "B0HJ8L6KJY", expected: 18 };
 const originalListen = express.application.listen;
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function post(port, path, secret, body) {
   const response = await fetch(`http://127.0.0.1:${port}${path}`, {
@@ -31,6 +32,18 @@ function freshMap(resp) {
   return new Map((Array.isArray(resp?.body?.results) ? resp.body.results : []).map(x => [x?.sku, x]));
 }
 
+function issueGuard(t, row) {
+  const codes = Array.isArray(row?.issueCodes) ? row.issueCodes.map(String) : [];
+  return codes.every(code => t.allowedIssueCodes.includes(code));
+}
+
+function exactAt(t, row, qty) {
+  return Boolean(row?.ok) &&
+    row.asin === t.asin &&
+    Number(row.availableQuantity) === qty &&
+    issueGuard(t, row);
+}
+
 function previewValid(resp) {
   return Boolean(
     resp?.ok &&
@@ -40,94 +53,124 @@ function previewValid(resp) {
   );
 }
 
-express.application.listen = function g83ZeroCutoverPreflight(...args) {
+express.application.listen = function g83ZeroCutoverLive(...args) {
   const server = originalListen.apply(this, args);
   const port = Number(process.env.PORT || 10000);
   const secret = String(process.env.AMAZON_STOCK_API_SECRET || "").trim();
 
   setTimeout(async () => {
+    let writes = 0;
     try {
       if (!secret) throw new Error("AMAZON_STOCK_API_SECRET_MISSING");
 
       const allSkus = [...TARGETS.map(x => x.sku), REPLACEMENT.sku];
-      const freshResp = await post(port, FRESH, secret, { skus: allSkus });
-      if (!freshResp.ok || freshResp.body?.ok !== true) {
-        throw new Error(`FRESH_PREFLIGHT_FAILED:${JSON.stringify(freshResp)}`);
+      const initialResp = await post(port, FRESH, secret, { skus: allSkus });
+      if (!initialResp.ok || initialResp.body?.ok !== true) {
+        throw new Error(`INITIAL_FRESH_FAILED:${JSON.stringify(initialResp)}`);
       }
-      const map = freshMap(freshResp);
-      const replacementFresh = map.get(REPLACEMENT.sku) || null;
-      const rows = [];
+      const initialMap = freshMap(initialResp);
+      const replacementFresh = initialMap.get(REPLACEMENT.sku) || null;
+      if (!replacementFresh?.ok || replacementFresh.asin !== REPLACEMENT.asin || Number(replacementFresh.availableQuantity) !== 0 || Number(replacementFresh.errorCount) !== 0) {
+        throw new Error(`REPLACEMENT_GUARD_BLOCK:${JSON.stringify(replacementFresh)}`);
+      }
 
+      const preflight = [];
       for (const t of TARGETS) {
-        const fresh = map.get(t.sku) || null;
+        const fresh = initialMap.get(t.sku) || null;
+        if (exactAt(t, fresh, t.target)) {
+          preflight.push({ sku: t.sku, state: "ALREADY_ZERO", fresh });
+          continue;
+        }
+        if (!exactAt(t, fresh, t.before)) {
+          throw new Error(`INITIAL_TARGET_GUARD_BLOCK:${t.sku}:${JSON.stringify(fresh)}`);
+        }
+
         const orders = await post(port, ORDERS, secret, { skus: [t.sku], lookbackHours: 168 });
-        const preview = await post(port, UPDATE, secret, {
+        if (!orders.ok || orders.body?.ok !== true || Number(orders.body?.totalMatchingOpenQty || 0) !== 0) {
+          throw new Error(`ORDERS_GATE_BLOCK:${t.sku}:${JSON.stringify(orders)}`);
+        }
+
+        const preview = await post(port, UPDATE, secret, { sku: t.sku, quantity: 0, dryRun: true, reservation: false });
+        if (!previewValid(preview)) {
+          throw new Error(`VALIDATION_PREVIEW_BLOCK:${t.sku}:${JSON.stringify(preview)}`);
+        }
+        preflight.push({
           sku: t.sku,
-          quantity: t.target,
-          dryRun: true,
-          reservation: false
-        });
-
-        const freshIdentityOk = Boolean(fresh?.ok && fresh.asin === t.asin);
-        const current = freshIdentityOk ? Number(fresh.availableQuantity) : null;
-        const decreaseRequired = current !== null && current > t.target;
-        const ordersClear = Boolean(
-          orders.ok &&
-          orders.body?.ok === true &&
-          Number(orders.body?.totalMatchingOpenQty || 0) === 0
-        );
-        const validationOk = previewValid(preview);
-        const readyForExplicitLiveApproval = Boolean(
-          freshIdentityOk && decreaseRequired && ordersClear && validationOk
-        );
-
-        rows.push({
-          ...t,
+          state: "READY_LIVE_ZERO",
           fresh,
-          ordersGate: {
-            httpStatus: orders.httpStatus,
-            ok: orders.ok && orders.body?.ok === true,
-            matchingLineCount: Number(orders.body?.matchingLineCount || 0),
-            totalMatchingOpenQty: Number(orders.body?.totalMatchingOpenQty || 0)
-          },
-          validationPreview: {
-            httpStatus: preview.httpStatus,
-            ok: preview.ok,
-            bodyOk: preview.body?.ok === true,
-            dryRun: preview.body?.dryRun === true,
-            status: preview.body?.result?.status || null,
-            submissionId: preview.body?.result?.submissionId || null,
-            issues: preview.body?.result?.issues || []
-          },
-          readyForExplicitLiveApproval
+          ordersMatchingQty: Number(orders.body?.totalMatchingOpenQty || 0),
+          previewSubmissionId: preview.body?.result?.submissionId || null
         });
+        await sleep(250);
       }
 
-      const allValidated = rows.every(r => r.readyForExplicitLiveApproval);
-      console.log(`G83_ZERO_CUTOVER_PREFLIGHT=${JSON.stringify({
-        status: allValidated ? "VALIDATION_4_OF_4_PASS" : "VALIDATION_REVIEW_REQUIRED",
+      const live = [];
+      for (const t of TARGETS) {
+        const currentResp = await post(port, FRESH, secret, { skus: [t.sku] });
+        const current = freshMap(currentResp).get(t.sku) || null;
+        if (exactAt(t, current, t.target)) {
+          live.push({ sku: t.sku, action: "PRESERVE_ALREADY_ZERO", target: 0 });
+          continue;
+        }
+        if (!exactAt(t, current, t.before)) {
+          throw new Error(`LAST_SECOND_GUARD_BLOCK:${t.sku}:${JSON.stringify(current)}`);
+        }
+
+        const orders = await post(port, ORDERS, secret, { skus: [t.sku], lookbackHours: 168 });
+        if (!orders.ok || orders.body?.ok !== true || Number(orders.body?.totalMatchingOpenQty || 0) !== 0) {
+          throw new Error(`LAST_SECOND_ORDERS_BLOCK:${t.sku}:${JSON.stringify(orders)}`);
+        }
+
+        const response = await post(port, UPDATE, secret, { sku: t.sku, quantity: 0, dryRun: false, reservation: false });
+        if (!response.ok || response.body?.ok !== true || response.body?.dryRun !== false || String(response.body?.result?.status || "") !== "ACCEPTED") {
+          throw new Error(`LIVE_ZERO_BLOCK:${t.sku}:${JSON.stringify(response)}`);
+        }
+        writes += 1;
+        live.push({
+          sku: t.sku,
+          action: "LIVE_ZERO",
+          httpStatus: response.httpStatus,
+          status: response.body?.result?.status || null,
+          submissionId: response.body?.result?.submissionId || null
+        });
+        await sleep(600);
+      }
+
+      let finalMap = null;
+      let allZero = false;
+      for (let attempt = 1; attempt <= 15; attempt += 1) {
+        const finalResp = await post(port, FRESH, secret, { skus: TARGETS.map(x => x.sku) });
+        finalMap = freshMap(finalResp);
+        allZero = TARGETS.every(t => exactAt(t, finalMap.get(t.sku), 0));
+        if (allZero) break;
+        await sleep(3000);
+      }
+
+      const final = TARGETS.map(t => ({
+        sku: t.sku,
+        asin: t.asin,
+        target: 0,
+        fresh: finalMap?.get(t.sku) || null
+      }));
+
+      console.log(`G83_ZERO_CUTOVER_LIVE_RESULT=${JSON.stringify({
+        status: allZero ? "G83_ZERO_4_OF_4_PASS" : "G83_ZERO_POSTVERIFY_PENDING",
         moduleVersion: VERSION,
-        replacementGuard: {
-          target: REPLACEMENT,
-          fresh: replacementFresh,
-          note: "Replacement 256 remains an increase requiring explicit approval before LIVE cutover. No replacement write performed."
-        },
-        rows,
-        liveAllowed: false,
-        liveBlockedReason: "EXPLICIT_USER_LIVE_APPROVAL_REQUIRED",
-        readOnlyExceptValidationPreview: true,
-        amazonInventoryWrites: 0,
+        replacementGuard: { target: REPLACEMENT, initialFresh: replacementFresh, untouched: true },
+        preflight,
+        live,
+        final,
+        amazonInventoryWrites: writes,
         priceWrites: 0,
         b2bWrites: 0,
         adsWrites: 0,
         yahooWrites: 0
       })}`);
     } catch (error) {
-      console.error(`G83_ZERO_CUTOVER_PREFLIGHT_ERROR=${JSON.stringify({
+      console.error(`G83_ZERO_CUTOVER_LIVE_ERROR=${JSON.stringify({
         moduleVersion: VERSION,
         error: error?.message || String(error),
-        liveAllowed: false,
-        amazonInventoryWrites: 0,
+        amazonInventoryWrites: writes,
         priceWrites: 0,
         b2bWrites: 0,
         adsWrites: 0,
