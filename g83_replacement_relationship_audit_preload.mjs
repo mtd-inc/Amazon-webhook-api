@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import fetch from "node-fetch";
 import "dotenv/config";
 
@@ -42,13 +42,13 @@ async function handler(req,res){
     for(const c of CHILDREN){
       const lr=await listing(a,c.sku); const cr=await catalog(a,c.asin);
       const s=lr.body?.summaries?.[0]||{}; const attrs=lr.body?.attributes||{};
-      rows.push({...c,listingHttp:lr.http,catalogHttp:cr.http,actualAsin:String(s.asin||""),productType:String(s.productType||""),status:Array.isArray(s.status)?s.status:[],relation:rel(attrs),catalogParents:catalogParents(cr.body),...issueSummary(lr.body)});
+      rows.push({...c,listingHttp:lr.http,catalogHttp:cr.http,actualAsin:String(s.asin||""),productType:String(s.productType||""),status:Array.isArray(s.status)?s.status:[],relation:rel(attrs),catalogParents:catalogParents(cr.body),catalogRelationshipsRaw:cr.body?.relationships||[],...issueSummary(lr.body)});
     }
     const parentChildren=catalogChildren(pc.body);
     const expectedAsins=CHILDREN.map(x=>x.asin);
     const linked=rows.filter(r=>r.relation.parentSku===PARENT.sku || r.catalogParents.includes(PARENT.asin));
     const exactSix=expectedAsins.every(a=>parentChildren.includes(a)) && parentChildren.filter(a=>expectedAsins.includes(a)).length===6;
-    return res.status(200).json({ok:true,moduleVersion:MODULE_VERSION,route:ROUTE,readOnly:true,externalChanges:0,amazonPersistentWrites:0,priceWrites:0,inventoryWrites:0,b2bWrites:0,adsWrites:0,yahooWrites:0,parent:{...PARENT,listingHttp:pr.http,catalogHttp:pc.http,actualAsin:String(ps.asin||""),productType:String(ps.productType||""),status:Array.isArray(ps.status)?ps.status:[],relation:rel(pa),catalogChildren:parentChildren,...issueSummary(pr.body)},children:rows,summary:{expectedChildCount:6,parentContainsExpectedCount:expectedAsins.filter(a=>parentChildren.includes(a)).length,childPointsToParentCount:linked.length,allChildrenErrorFree:rows.every(r=>r.errorCount===0),catalogSixOfSix:exactSix},liveAllowed:false,liveBlockedReason:"READ_ONLY_AUDIT"});
+    return res.status(200).json({ok:true,moduleVersion:MODULE_VERSION,route:ROUTE,readOnly:true,externalChanges:0,amazonPersistentWrites:0,priceWrites:0,inventoryWrites:0,b2bWrites:0,adsWrites:0,yahooWrites:0,parent:{...PARENT,listingHttp:pr.http,catalogHttp:pc.http,actualAsin:String(ps.asin||""),productType:String(ps.productType||""),status:Array.isArray(ps.status)?ps.status:[],relation:rel(pa),catalogChildren:parentChildren,catalogRelationshipsRaw:pc.body?.relationships||[],...issueSummary(pr.body)},children:rows,summary:{expectedChildCount:6,parentContainsExpectedCount:expectedAsins.filter(a=>parentChildren.includes(a)).length,childPointsToParentCount:linked.length,allChildrenErrorFree:rows.every(r=>r.errorCount===0),catalogSixOfSix:exactSix},liveAllowed:false,liveBlockedReason:"READ_ONLY_AUDIT"});
   }catch(err){return res.status(400).json({ok:false,moduleVersion:MODULE_VERSION,route:ROUTE,readOnly:true,externalChanges:0,error:err?.message||String(err)});}
 }
 
@@ -57,3 +57,4 @@ express.application.listen=function g83ReplacementRelationshipAuditListen(...arg
   if(!exists)this.post(ROUTE,handler);
   return originalListen.apply(this,args);
 };
+
