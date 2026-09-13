@@ -1,17 +1,17 @@
-﻿import express from "express";
+import express from "express";
 import fetch from "node-fetch";
 import "dotenv/config";
 
-const MODULE_VERSION = "2026-09-12-s73-b2c-price-validation-preview-v1.0.0";
+const MODULE_VERSION = "2026-09-13-s73-b2c-price-validation-preview-v1.1.0-v121";
 const ROUTE = "/amazon/price/s73/b2c-validation-preview";
-const BATCH_TOKEN = "S73_B2C_PRICE_6_20260912_V1";
+const BATCH_TOKEN = "S73_B2C_PRICE_6_V121_20260913";
 const originalListen = express.application.listen;
 const marketplaceDefault = "A1VC38T7YXB528";
 
 const TARGETS = Object.freeze([
-  {sku:"s73-hs-i5-11g-8gb-ssd256",asin:"B0HJL5MCV9",price:35800,min:35500},
-  {sku:"s73-hs-i5-11g-8gb-ssd512",asin:"B0HJLDDQQ3",price:49800,min:42400},
-  {sku:"s73-hs-i5-11g-8gb-ssd1tb",asin:"B0HJL3QKXR",price:64800,min:56900},
+  {sku:"s73-hs-i5-11g-8gb-ssd256",asin:"B0HJL5MCV9",price:35800,min:28100},
+  {sku:"s73-hs-i5-11g-8gb-ssd512",asin:"B0HJLDDQQ3",price:49800,min:42500},
+  {sku:"s73-hs-i5-11g-8gb-ssd1tb",asin:"B0HJL3QKXR",price:64800,min:57000},
   {sku:"7X-725F-2ZML",asin:"B0HGDBYRS8",price:43800,min:39600},
   {sku:"s73-hs-i5-11g-16gb-ssd512",asin:"B0HJ28YCP7",price:54800,min:54000},
   {sku:"s73-hs-i5-11g-16gb-ssd1tb",asin:"B0HJL1TP7L",price:69800,min:68500},
