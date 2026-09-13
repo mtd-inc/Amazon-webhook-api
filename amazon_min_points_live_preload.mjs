@@ -17,8 +17,6 @@ Object.freeze({sku:"ZK-N79H-VRJQ",asin:"B0D4QMJK1Z",totalCost:20850,feeRate:.10,
 Object.freeze({sku:"QH-ITJ6-BTTC",asin:"B0FPC385LM",totalCost:44750,feeRate:.10,minProfit:5000,minGrossRate:.20,approvedMin:65200,expectedCurrentMin:57000,expectedEffectivePrice:87000,expectedPoints:870}),
 Object.freeze({sku:"E7-YLJ3-F9CY",asin:"B0GZBHBQN2",totalCost:24750,feeRate:.10,minProfit:5000,minGrossRate:.20,approvedMin:36200,expectedCurrentMin:36100,expectedEffectivePrice:41170,expectedPoints:580}),
 Object.freeze({sku:"5K-G098-FO9O",asin:"B0FPC52B8K",totalCost:34750,feeRate:.10,minProfit:5000,minGrossRate:.20,approvedMin:50800,expectedCurrentMin:48000,expectedEffectivePrice:78000,expectedPoints:780}),
-Object.freeze({sku:"9K-D0RA-4R8V",asin:"B0FPC4R7ZG",totalCost:36750,feeRate:.10,minProfit:5000,minGrossRate:.20,approvedMin:53800,expectedCurrentMin:59000,expectedEffectivePrice:86000,expectedPoints:860}),
-Object.freeze({sku:"F7-AF7O-IGX5",asin:"B0FN3KQFR3",totalCost:16750,feeRate:.10,minProfit:5000,minGrossRate:.20,approvedMin:25000,expectedCurrentMin:46000,expectedEffectivePrice:73000,expectedPoints:730}),
 Object.freeze({sku:"SO-9QJ3-7SHR",asin:"B0FPC2JKBY",totalCost:26750,feeRate:.10,minProfit:5000,minGrossRate:.20,approvedMin:39400,expectedCurrentMin:50000,expectedEffectivePrice:77000,expectedPoints:770}),
 Object.freeze({sku:"FU-OAHV-H4W4",asin:"B0H211KYDG",totalCost:18850,feeRate:.10,minProfit:5000,minGrossRate:.20,approvedMin:27900,expectedCurrentMin:32000,expectedEffectivePrice:65000,expectedPoints:650}),
 Object.freeze({sku:"LeLib_l580_i5-8G_16gb_SSD256",asin:"B0F333JB5Q",totalCost:26450,feeRate:.10,minProfit:5000,minGrossRate:.20,approvedMin:38500,expectedCurrentMin:null,expectedEffectivePrice:44000,expectedPoints:440})]);

@@ -34,15 +34,6 @@ const APPROVED = Object.freeze([
     plan: Object.freeze({ discountType: "percent", tiers: Object.freeze([{ lowerBound: 5, value: 5 }, { lowerBound: 10, value: 7 }]) }),
   }),
   Object.freeze({
-    sku: "F7-AF7O-IGX5",
-    asin: "B0FN3KQFR3",
-    generalPrice: 68000,
-    normalPrice: 73000,
-    b2bPrice: 69350,
-    quantityMinLot: 10,
-    plan: Object.freeze({ discountType: "percent", tiers: Object.freeze([{ lowerBound: 5, value: 5 }, { lowerBound: 10, value: 7 }]) }),
-  }),
-  Object.freeze({
     sku: "SO-9QJ3-7SHR",
     asin: "B0FPC2JKBY",
     generalPrice: 77000,

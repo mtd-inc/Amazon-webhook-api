@@ -31,8 +31,6 @@ const APPROVED = Object.freeze([
   Object.freeze({ sku: "QH-ITJ6-BTTC", asin: "B0FPC385LM", totalCost: 44750, feeRate: 0.10, minProfit: 5000, minGrossRate: 0.20, approvedMin: 65200 }),
   Object.freeze({ sku: "E7-YLJ3-F9CY", asin: "B0GZBHBQN2", totalCost: 24750, feeRate: 0.10, minProfit: 5000, minGrossRate: 0.20, approvedMin: 36200 }),
   Object.freeze({ sku: "5K-G098-FO9O", asin: "B0FPC52B8K", totalCost: 34750, feeRate: 0.10, minProfit: 5000, minGrossRate: 0.20, approvedMin: 50800 }),
-  Object.freeze({ sku: "9K-D0RA-4R8V", asin: "B0FPC4R7ZG", totalCost: 36750, feeRate: 0.10, minProfit: 5000, minGrossRate: 0.20, approvedMin: 53800 }),
-  Object.freeze({ sku: "F7-AF7O-IGX5", asin: "B0FN3KQFR3", totalCost: 16750, feeRate: 0.10, minProfit: 5000, minGrossRate: 0.20, approvedMin: 25000 }),
   Object.freeze({ sku: "SO-9QJ3-7SHR", asin: "B0FPC2JKBY", totalCost: 26750, feeRate: 0.10, minProfit: 5000, minGrossRate: 0.20, approvedMin: 39400 }),
   Object.freeze({ sku: "FU-OAHV-H4W4", asin: "B0H211KYDG", totalCost: 18850, feeRate: 0.10, minProfit: 5000, minGrossRate: 0.20, approvedMin: 27900 }),
   Object.freeze({ sku: "LeLib_l580_i5-8G_16gb_SSD256", asin: "B0F333JB5Q", totalCost: 26450, feeRate: 0.10, minProfit: 5000, minGrossRate: 0.20, approvedMin: 38500 }),
