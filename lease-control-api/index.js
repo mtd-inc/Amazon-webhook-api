@@ -21,6 +21,7 @@ if (!PRIVATE_KEY || !PUBLIC_KEY) {
   ephemeralKey = true;
 }
 if (!KEY_ID) KEY_ID = 'nb-lease-key';
+const PUBLIC_JWK = crypto.createPublicKey(PUBLIC_KEY).export({ format: 'jwk' });
 
 const states = new Map();
 for (const row of JSON.parse(process.env.LEASE_BOOTSTRAP_CONTRACTS_JSON || '[]')) {
@@ -51,6 +52,10 @@ app.get('/healthz', (_req, res) => res.json({ ok: true, service: 'nodebase-lease
 app.get('/v1/public-key', (_req, res) => {
   res.set('Cache-Control', 'no-store');
   res.type('text/plain').send(PUBLIC_KEY);
+});
+app.get('/v1/public-key-jwk', (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ keyId: KEY_ID, alg: 'RS256', kty: PUBLIC_JWK.kty, n: PUBLIC_JWK.n, e: PUBLIC_JWK.e });
 });
 
 app.get('/v1/device/:serial/lease-state', (req, res) => {
