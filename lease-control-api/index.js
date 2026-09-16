@@ -28,9 +28,11 @@ for (const row of JSON.parse(process.env.LEASE_BOOTSTRAP_CONTRACTS_JSON || '[]')
 }
 
 function signPayload(payload) {
-  const payloadB64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
+  const payloadJson = JSON.stringify(payload);
+  const payloadBytes = Buffer.from(payloadJson, 'utf8');
+  const payloadB64 = payloadBytes.toString('base64');
   const signer = crypto.createSign('RSA-SHA256');
-  signer.update(Buffer.from(payloadB64, 'utf8'));
+  signer.update(payloadBytes);
   signer.end();
   const signatureB64 = signer.sign(PRIVATE_KEY).toString('base64');
   return { envelopeVersion: 1, alg: 'RS256', keyId: KEY_ID, payloadB64, signatureB64 };
