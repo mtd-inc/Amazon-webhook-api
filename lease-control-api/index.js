@@ -5,13 +5,22 @@ const app = express();
 app.use(express.json({ limit: '32kb' }));
 
 const PORT = Number(process.env.PORT || 10000);
-const KEY_ID = process.env.LEASE_KEY_ID || 'unset';
-const PRIVATE_KEY = (process.env.LEASE_SIGNING_PRIVATE_KEY_PEM || '').replace(/\\n/g, '\n');
-const ADMIN_TOKEN = process.env.LEASE_ADMIN_TOKEN || '';
 const TTL_HOURS = Number(process.env.LEASE_TTL_HOURS || 24);
+const ADMIN_TOKEN = process.env.LEASE_ADMIN_TOKEN || '';
 
-if (!PRIVATE_KEY) throw new Error('LEASE_SIGNING_PRIVATE_KEY_PEM is required');
-if (!ADMIN_TOKEN) throw new Error('LEASE_ADMIN_TOKEN is required');
+let PRIVATE_KEY = (process.env.LEASE_SIGNING_PRIVATE_KEY_PEM || '').replace(/\\n/g, '\n');
+let PUBLIC_KEY = (process.env.LEASE_SIGNING_PUBLIC_KEY_PEM || '').replace(/\\n/g, '\n');
+let KEY_ID = process.env.LEASE_KEY_ID || '';
+let ephemeralKey = false;
+
+if (!PRIVATE_KEY || !PUBLIC_KEY) {
+  const kp = crypto.generateKeyPairSync('rsa', { modulusLength: 3072 });
+  PRIVATE_KEY = kp.privateKey.export({ type: 'pkcs8', format: 'pem' });
+  PUBLIC_KEY = kp.publicKey.export({ type: 'spki', format: 'pem' });
+  KEY_ID = KEY_ID || `ephemeral-${Date.now()}`;
+  ephemeralKey = true;
+}
+if (!KEY_ID) KEY_ID = 'nb-lease-key';
 
 const states = new Map();
 for (const row of JSON.parse(process.env.LEASE_BOOTSTRAP_CONTRACTS_JSON || '[]')) {
@@ -19,8 +28,7 @@ for (const row of JSON.parse(process.env.LEASE_BOOTSTRAP_CONTRACTS_JSON || '[]')
 }
 
 function signPayload(payload) {
-  const payloadJson = JSON.stringify(payload);
-  const payloadB64 = Buffer.from(payloadJson, 'utf8').toString('base64');
+  const payloadB64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
   const signer = crypto.createSign('RSA-SHA256');
   signer.update(Buffer.from(payloadB64, 'utf8'));
   signer.end();
@@ -29,6 +37,7 @@ function signPayload(payload) {
 }
 
 function requireAdmin(req, res, next) {
+  if (!ADMIN_TOKEN) return res.status(404).json({ error: 'not_found' });
   const token = req.get('authorization')?.replace(/^Bearer\s+/i, '') || '';
   const a = Buffer.from(token);
   const b = Buffer.from(ADMIN_TOKEN);
@@ -36,7 +45,11 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-app.get('/healthz', (_req, res) => res.json({ ok: true, service: 'nodebase-lease-control-api', keyId: KEY_ID }));
+app.get('/healthz', (_req, res) => res.json({ ok: true, service: 'nodebase-lease-control-api', keyId: KEY_ID, ephemeralKey }));
+app.get('/v1/public-key', (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.type('text/plain').send(PUBLIC_KEY);
+});
 
 app.get('/v1/device/:serial/lease-state', (req, res) => {
   const serial = String(req.params.serial || '').trim().toUpperCase();
