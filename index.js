@@ -439,8 +439,81 @@ async function getLwaAccessToken() {
   return json.access_token;
 }
 
+// -------------------- Amazon protected attributes guard --------------------
+// SSOT: Inventory spreadsheet "09J_Amazon属性保護ルール".
+// Operational invariant: Amazon brand = MTD / manufacturer = MTD.
+// Preview and LIVE calls are both blocked before SP-API if they attempt any other value.
+const AMAZON_PROTECTED_ATTRIBUTE_FIXED = Object.freeze({
+  brand: "MTD",
+  manufacturer: "MTD"
+});
+
+function extractAmazonAttributeValues(attributeRows) {
+  if (!Array.isArray(attributeRows)) return [];
+  return attributeRows
+    .map((row) => (row && typeof row === "object" ? row.value : undefined))
+    .filter((value) => value !== undefined && value !== null)
+    .map((value) => String(value).trim());
+}
+
+function assertAmazonProtectedAttributesRequest({ method = "GET", path = "", body = null }) {
+  const verb = String(method || "GET").toUpperCase();
+  const requestPath = String(path || "");
+
+  if (!/\/listings\/2021-08-01\/items\//i.test(requestPath)) return true;
+  if (!["PATCH", "PUT"].includes(verb)) return true;
+  if (!body || typeof body !== "object") {
+    if (verb === "PUT") {
+      throw new Error("AMAZON_PROTECTED_ATTRIBUTE_BLOCK: Listings PUT requires brand/manufacturer=MTD");
+    }
+    return true;
+  }
+
+  if (verb === "PATCH") {
+    const patches = Array.isArray(body.patches) ? body.patches : [];
+    for (const patch of patches) {
+      const patchPath = String(patch?.path || "").toLowerCase();
+      let attr = null;
+      if (patchPath === "/attributes/brand") attr = "brand";
+      if (patchPath === "/attributes/manufacturer") attr = "manufacturer";
+      if (!attr) continue;
+
+      if (String(patch?.op || "").toLowerCase() === "delete") {
+        throw new Error(
+          `AMAZON_PROTECTED_ATTRIBUTE_BLOCK: ${attr} is protected and cannot be deleted`
+        );
+      }
+
+      const values = extractAmazonAttributeValues(patch?.value);
+      const expected = AMAZON_PROTECTED_ATTRIBUTE_FIXED[attr];
+      if (!values.length || values.some((value) => value !== expected)) {
+        throw new Error(
+          `AMAZON_PROTECTED_ATTRIBUTE_BLOCK: ${attr} is fixed to ${expected}; candidate=${JSON.stringify(values)}`
+        );
+      }
+    }
+    return true;
+  }
+
+  const attrs = body.attributes && typeof body.attributes === "object"
+    ? body.attributes
+    : {};
+  for (const attr of ["brand", "manufacturer"]) {
+    const values = extractAmazonAttributeValues(attrs[attr]);
+    const expected = AMAZON_PROTECTED_ATTRIBUTE_FIXED[attr];
+    if (!values.length || values.some((value) => value !== expected)) {
+      throw new Error(
+        `AMAZON_PROTECTED_ATTRIBUTE_BLOCK: Listings PUT requires ${attr}=${expected}; candidate=${JSON.stringify(values)}`
+      );
+    }
+  }
+
+  return true;
+}
+
 // -------------------- 共通：SP-API request --------------------
 async function spApiRequest({ method = "GET", path, body = null, accessToken, timeoutMs = 0 }) {
+  assertAmazonProtectedAttributesRequest({ method, path, body });
   const bodyText = body ? JSON.stringify(body) : undefined;
 
   const headers = {
