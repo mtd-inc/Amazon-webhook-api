@@ -2,19 +2,26 @@ import express from "express";
 import { readFileSync } from "node:fs";
 import crypto from "node:crypto";
 
-const MODULE_VERSION = "2026-09-22-s73-16-512-image-assets-v1.0.0";
+const MODULE_VERSION = "2026-09-23-s73-variant-image-assets-v2.0.0";
 const originalListen = express.application.listen;
 const ASSETS = Object.freeze({
-  "/assets/s73-16-512-pt01.png": new URL("./public/S73-16-512-1.png", import.meta.url),
-  "/assets/s73-16-512-pt05.png": new URL("./public/s73-16-512-5.png", import.meta.url),
-  "/assets/s73-16-512-pt06.png": new URL("./public/s73-16-512-2.png", import.meta.url),
+  "/assets/s73-16-512-pt01.png": { url: new URL("./public/S73-16-512-1.png", import.meta.url), type: "image/png" },
+  "/assets/s73-16-512-pt05.png": { url: new URL("./public/s73-16-512-5.png", import.meta.url), type: "image/png" },
+  "/assets/s73-16-512-pt06.png": { url: new URL("./public/s73-16-512-2.png", import.meta.url), type: "image/png" },
+  "/assets/s73-8-256-main-v2.jpg": { url: new URL("./public/s73-8-256-main-v2.jpg", import.meta.url), type: "image/jpeg" },
+  "/assets/s73-8-256-pt01-v2.jpg": { url: new URL("./public/s73-8-256-pt01-v2.jpg", import.meta.url), type: "image/jpeg" },
+  "/assets/s73-8-256-pt05-v2.jpg": { url: new URL("./public/s73-8-256-pt05-v2.jpg", import.meta.url), type: "image/jpeg" },
+  "/assets/s73-16-512-main-v3.png": { url: new URL("./public/s73-16-512-main-v3.png", import.meta.url), type: "image/png" },
+  "/assets/s73-16-512-pt01-v3.png": { url: new URL("./public/s73-16-512-pt01-v3.png", import.meta.url), type: "image/png" },
+  "/assets/s73-16-512-pt05-v3.png": { url: new URL("./public/s73-16-512-pt05-v3.png", import.meta.url), type: "image/png" },
 });
 
 const loaded = Object.fromEntries(
-  Object.entries(ASSETS).map(([route, url]) => {
-    const bytes = readFileSync(url);
+  Object.entries(ASSETS).map(([route, spec]) => {
+    const bytes = readFileSync(spec.url);
     return [route, {
       bytes,
+      type: spec.type,
       sha256: crypto.createHash("sha256").update(bytes).digest("hex"),
     }];
   })
@@ -28,7 +35,7 @@ express.application.listen = function s73ImageAssetListen(...args) {
         res.set("Cache-Control", "public, max-age=300");
         res.set("X-S73-Image-Version", MODULE_VERSION);
         res.set("X-Content-SHA256", asset.sha256);
-        res.type("image/png");
+        res.type(asset.type);
         return res.status(200).send(asset.bytes);
       });
     }
