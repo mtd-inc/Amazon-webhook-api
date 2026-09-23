@@ -2,7 +2,7 @@ import express from "express";
 import { readFileSync } from "node:fs";
 import crypto from "node:crypto";
 
-const MODULE_VERSION = "2026-09-23-s73-variant-image-assets-v2.0.0";
+const MODULE_VERSION = "2026-09-23-s73-variant-image-assets-v2.1.0";
 const originalListen = express.application.listen;
 const ASSETS = Object.freeze({
   "/assets/s73-16-512-pt01.png": { url: new URL("./public/S73-16-512-1.png", import.meta.url), type: "image/png" },
@@ -14,6 +14,9 @@ const ASSETS = Object.freeze({
   "/assets/s73-16-512-main-v3.png": { url: new URL("./public/s73-16-512-main-v3.png", import.meta.url), type: "image/png" },
   "/assets/s73-16-512-pt01-v3.png": { url: new URL("./public/s73-16-512-pt01-v3.png", import.meta.url), type: "image/png" },
   "/assets/s73-16-512-pt05-v3.png": { url: new URL("./public/s73-16-512-pt05-v3.png", import.meta.url), type: "image/png" },
+  "/assets/s73-16-1tb-main-v1.jpg": { url: new URL("./public/s73-16-1tb-main-v1.jpg", import.meta.url), type: "image/jpeg" },
+  "/assets/s73-16-1tb-pt01-v1.jpg": { url: new URL("./public/s73-16-1tb-pt01-v1.jpg", import.meta.url), type: "image/jpeg" },
+  "/assets/s73-16-1tb-pt05-v1.jpg": { url: new URL("./public/s73-16-1tb-pt05-v1.jpg", import.meta.url), type: "image/jpeg" },
 });
 
 const loaded = Object.fromEntries(
