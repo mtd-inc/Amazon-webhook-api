@@ -11,6 +11,9 @@ const TTL_HOURS = Number(process.env.LEASE_TTL_HOURS || 24);
 const ADMIN_TOKEN = process.env.LEASE_ADMIN_TOKEN || '';
 const DATABASE_URL = process.env.DATABASE_URL || '';
 const DATABASE_SSL = String(process.env.DATABASE_SSL || '').toLowerCase() === 'true';
+const TABLE_PREFIX = String(process.env.LEASE_TABLE_PREFIX || '').replace(/[^A-Za-z0-9_]/g, '');
+const STATE_TABLE = `${TABLE_PREFIX}lease_device_state`;
+const AUDIT_TABLE = `${TABLE_PREFIX}lease_audit`;
 const VALID_STATES = new Set(['ACTIVE', 'GRACE', 'SUSPENDED', 'RETURNED', 'LOST']);
 const TRANSITIONS = {
   ACTIVE: new Set(['ACTIVE', 'GRACE', 'SUSPENDED', 'RETURNED', 'LOST']),
@@ -60,20 +63,20 @@ function actorFrom(req) {
 
 async function initStore() {
   if (!pool) return;
-  await pool.query(`CREATE TABLE IF NOT EXISTS lease_device_state (
+  await pool.query(`CREATE TABLE IF NOT EXISTS ${STATE_TABLE} (
     serial text PRIMARY KEY, inventory_no text NOT NULL, state text NOT NULL,
     grace_until timestamptz NULL, source text NOT NULL, reason_code text NULL,
     updated_at timestamptz NOT NULL, version bigint NOT NULL DEFAULT 1
   )`);
-  await pool.query(`CREATE TABLE IF NOT EXISTS lease_audit (
+  await pool.query(`CREATE TABLE IF NOT EXISTS ${AUDIT_TABLE} (
     id bigserial PRIMARY KEY, serial text NOT NULL, before_state text NULL,
     after_state text NOT NULL, reason_code text NULL, source text NOT NULL,
     actor text NULL, changed_at timestamptz NOT NULL DEFAULT now()
   )`);
-  await pool.query(`ALTER TABLE lease_audit ADD COLUMN IF NOT EXISTS actor text NULL`);
+  await pool.query(`ALTER TABLE ${AUDIT_TABLE} ADD COLUMN IF NOT EXISTS actor text NULL`);
   for (const row of bootstrap) {
     if (!row?.serial || !row?.inventoryNo || !row?.state) continue;
-    await pool.query(`INSERT INTO lease_device_state(serial,inventory_no,state,grace_until,source,reason_code,updated_at,version)
+    await pool.query(`INSERT INTO ${STATE_TABLE}(serial,inventory_no,state,grace_until,source,reason_code,updated_at,version)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(serial) DO NOTHING`, [
       normalizeSerial(row.serial), String(row.inventoryNo), normalizeState(row.state), row.graceUntil || null,
       row.source || 'BOOTSTRAP', row.reasonCode || null, row.updatedAt || new Date().toISOString(), Number(row.version || 1)
@@ -83,7 +86,7 @@ async function initStore() {
 
 async function getState(serial) {
   if (!pool) return memoryStates.get(serial) || null;
-  const q = await pool.query('SELECT * FROM lease_device_state WHERE serial=$1', [serial]);
+  const q = await pool.query('SELECT * FROM ${STATE_TABLE} WHERE serial=$1', [serial]);
   if (!q.rows[0]) return null;
   const r = q.rows[0];
   return { serial:r.serial, inventoryNo:r.inventory_no, state:r.state, graceUntil:r.grace_until,
@@ -101,9 +104,9 @@ async function upsertDevice({ serial, inventoryNo, state, graceUntil, reasonCode
       memoryAudit.push({ serial, beforeState:null, afterState:state, reasonCode:next.reasonCode, source:next.source, actor, changedAt:now });
       return next;
     }
-    await pool.query(`INSERT INTO lease_device_state(serial,inventory_no,state,grace_until,source,reason_code,updated_at,version)
+    await pool.query(`INSERT INTO ${STATE_TABLE}(serial,inventory_no,state,grace_until,source,reason_code,updated_at,version)
       VALUES($1,$2,$3,$4,$5,$6,$7,1)`, [serial,inventoryNo,state,next.graceUntil,next.source,next.reasonCode,now]);
-    await pool.query(`INSERT INTO lease_audit(serial,before_state,after_state,reason_code,source,actor) VALUES($1,NULL,$2,$3,$4,$5)`,
+    await pool.query(`INSERT INTO ${AUDIT_TABLE}(serial,before_state,after_state,reason_code,source,actor) VALUES($1,NULL,$2,$3,$4,$5)`,
       [serial,state,next.reasonCode,next.source,actor]);
     return next;
   }
@@ -133,9 +136,9 @@ async function setState(serial, state, graceUntil, reasonCode, actor) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query(`UPDATE lease_device_state SET state=$2,grace_until=$3,source='ADMIN_API',reason_code=$4,updated_at=$5,version=$6 WHERE serial=$1`,
+    await client.query(`UPDATE ${STATE_TABLE} SET state=$2,grace_until=$3,source='ADMIN_API',reason_code=$4,updated_at=$5,version=$6 WHERE serial=$1`,
       [serial,next.state,next.graceUntil,next.reasonCode,next.updatedAt,next.version]);
-    await client.query(`INSERT INTO lease_audit(serial,before_state,after_state,reason_code,source,actor) VALUES($1,$2,$3,$4,'ADMIN_API',$5)`,
+    await client.query(`INSERT INTO ${AUDIT_TABLE}(serial,before_state,after_state,reason_code,source,actor) VALUES($1,$2,$3,$4,'ADMIN_API',$5)`,
       [serial,current.state,next.state,next.reasonCode,actor]);
     await client.query('COMMIT');
     return next;
@@ -145,7 +148,7 @@ async function setState(serial, state, graceUntil, reasonCode, actor) {
 async function getAudit(serial, limit = 50) {
   if (!pool) return memoryAudit.filter(x => x.serial === serial).slice(-limit).reverse();
   const q = await pool.query(`SELECT id,serial,before_state AS "beforeState",after_state AS "afterState",reason_code AS "reasonCode",source,actor,changed_at AS "changedAt"
-    FROM lease_audit WHERE serial=$1 ORDER BY id DESC LIMIT $2`, [serial, limit]);
+    FROM ${AUDIT_TABLE} WHERE serial=$1 ORDER BY id DESC LIMIT $2`, [serial, limit]);
   return q.rows;
 }
 
