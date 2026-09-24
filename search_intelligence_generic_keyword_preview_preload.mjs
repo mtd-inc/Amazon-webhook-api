@@ -19,7 +19,7 @@ function sha256(value) {
 }
 
 function getSecret() {
-  return String(process.env.AMAZON_STOCK_API_SECRET || "").trim();
+  return String(process.env.SEARCH_INTELLIGENCE_PREVIEW_SECRET || "").trim();
 }
 
 function getConfig() {
@@ -155,10 +155,10 @@ async function handler(req, res) {
         validationPreviewOnly: true,
         amazonPersistentWrites: 0,
         externalChanges: 0,
-        error: "AMAZON_STOCK_API_SECRET is not set",
+        error: "SEARCH_INTELLIGENCE_PREVIEW_SECRET is not set",
       });
     }
-    if (String(req.headers["x-api-secret"] || "") !== secret) {
+    if (String(req.headers["x-si-preview-secret"] || "") !== secret) {
       return res.status(401).json({
         ok: false,
         moduleVersion: MODULE_VERSION,
