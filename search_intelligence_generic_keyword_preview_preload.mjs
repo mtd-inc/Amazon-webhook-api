@@ -1,5 +1,3 @@
-[Reading 279 lines from start (total: 279 lines, 0 remaining)]
-
 import crypto from "node:crypto";
 import express from "express";
 import fetch from "node-fetch";
