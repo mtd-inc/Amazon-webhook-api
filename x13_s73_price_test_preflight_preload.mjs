@@ -2,11 +2,11 @@ import express from "express";
 import fetch from "node-fetch";
 import "dotenv/config";
 
-const MODULE_VERSION="2026-09-24-x13-s73-price-test-preflight-v1.0.0";
+const MODULE_VERSION="2026-09-24-x13-s73-price-test-preflight-v1.1.0";
 const ROUTE="/amazon/price/price-test/x13-s73/preflight";
 const TARGETS=Object.freeze({
-  "NY-G14F-GH8Y":Object.freeze({sku:"NY-G14F-GH8Y",asin:"B0FMS8XJ3D",normalPrice:34900,salePrice:32800,safeFloor:30000,durationHours:72}),
-  "s73-hs-i5-11g-8gb-ssd1tb":Object.freeze({sku:"s73-hs-i5-11g-8gb-ssd1tb",asin:"B0HJL3QKXR",normalPrice:64800,salePrice:59000,safeFloor:58600,durationHours:72})
+  "NY-G14F-GH8Y":Object.freeze({sku:"NY-G14F-GH8Y",asin:"B0FMS8XJ3D",normalPrice:34900,salePrice:32800,safeFloor:30000,durationHours:168}),
+  "s73-hs-i5-11g-8gb-ssd1tb":Object.freeze({sku:"s73-hs-i5-11g-8gb-ssd1tb",asin:"B0HJL3QKXR",normalPrice:64800,salePrice:59000,safeFloor:58600,durationHours:168})
 });
 const originalPost=express.application.post;
 const TIMEOUT=20000;
