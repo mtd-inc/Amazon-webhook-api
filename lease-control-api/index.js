@@ -86,7 +86,7 @@ async function initStore() {
 
 async function getState(serial) {
   if (!pool) return memoryStates.get(serial) || null;
-  const q = await pool.query('SELECT * FROM ${STATE_TABLE} WHERE serial=$1', [serial]);
+  const q = await pool.query(`SELECT * FROM ${STATE_TABLE} WHERE serial=$1`, [serial]);
   if (!q.rows[0]) return null;
   const r = q.rows[0];
   return { serial:r.serial, inventoryNo:r.inventory_no, state:r.state, graceUntil:r.grace_until,
