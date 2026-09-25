@@ -2,7 +2,7 @@ import express from "express";
 import { readFileSync } from "node:fs";
 import crypto from "node:crypto";
 
-const MODULE_VERSION = "2026-09-25-s73-variant-image-assets-v2.2.0";
+const MODULE_VERSION = "2026-09-25-s73-variant-image-assets-v2.3.0";
 const originalListen = express.application.listen;
 const ASSETS = Object.freeze({
   "/assets/s73-16-512-pt01.png": { url: new URL("./public/S73-16-512-1.png", import.meta.url), type: "image/png" },
@@ -20,6 +20,12 @@ const ASSETS = Object.freeze({
   "/assets/s73-shared-1tb-main-v2.png": { url: new URL("./public/s73-shared-1tb-main-v2.png", import.meta.url), type: "image/png" },
   "/assets/s73-shared-1tb-pt01-v2.png": { url: new URL("./public/s73-shared-1tb-pt01-v2.png", import.meta.url), type: "image/png" },
   "/assets/s73-shared-1tb-pt05-v2.png": { url: new URL("./public/s73-shared-1tb-pt05-v2.png", import.meta.url), type: "image/png" },
+  "/assets/s73-shared-256-v1-main.png": { url: new URL("./public/s73-shared-256-v1-main.png", import.meta.url), type: "image/png" },
+  "/assets/s73-shared-256-v1-pt01.png": { url: new URL("./public/s73-shared-256-v1-pt01.png", import.meta.url), type: "image/png" },
+  "/assets/s73-shared-256-v1-pt05.png": { url: new URL("./public/s73-shared-256-v1-pt05.png", import.meta.url), type: "image/png" },
+  "/assets/s73-shared-512-v1-main.png": { url: new URL("./public/s73-shared-512-v1-main.png", import.meta.url), type: "image/png" },
+  "/assets/s73-shared-512-v1-pt01.png": { url: new URL("./public/s73-shared-512-v1-pt01.png", import.meta.url), type: "image/png" },
+  "/assets/s73-shared-512-v1-pt05.png": { url: new URL("./public/s73-shared-512-v1-pt05.png", import.meta.url), type: "image/png" },
 });
 
 const loaded = Object.fromEntries(
