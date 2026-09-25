@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#fffaf6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="青井アプリ">
+<title>青井兵和通り商店街｜アプリデモ</title>
+<style>
+:root{--g:#12644f;--g2:#23856b;--ink:#173a31;--rose:#df6d86;--rose2:#fff0f3;--orange:#dc7a2e;--bg:#f6f2ea;--card:#fffdf9;--line:#e8e0d5;--muted:#73817c;--shadow:0 12px 30px rgba(24,52,45,.08)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;overflow-x:hidden}
+button,input{font:inherit}button{cursor:pointer}.app{width:100%;max-width:480px;margin:0 auto;min-height:100dvh;padding-bottom:88px}
+.top{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;background:rgba(255,253,249,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px}.logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--g),var(--g2));display:grid;place-items:center;color:#fff;font-weight:900;font-size:18px}.brand b{display:block;font-size:15px}.brand small{display:block;color:var(--muted);font-size:9px;margin-top:2px}.topActions{display:flex;gap:8px}.iconBtn{width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:#fff;display:grid;place-items:center}.demo{font-size:9px;font-weight:900;letter-spacing:.08em;color:var(--rose);background:var(--rose2);border:1px solid #f5d5dd;border-radius:999px;padding:7px 9px}
+.page{display:none;padding:14px 13px 26px}.page.active{display:block}.hello{display:flex;justify-content:space-between;align-items:end;margin:4px 2px 10px}.hello small{font-size:10px;color:var(--muted)}.hello h1{font-size:24px;margin:4px 0 0}.weather{font-size:10px;color:var(--g);background:#eaf6f1;padding:7px 9px;border-radius:999px}
+.hero{position:relative;min-height:230px;border-radius:24px;overflow:hidden;background:linear-gradient(180deg,rgba(15,50,41,.02),rgba(15,50,41,.54)),url("./hero.jpg?v=20260925");background-size:cover;background-position:center;box-shadow:var(--shadow);padding:18px;display:flex;align-items:flex-end}.hero:after{content:"🌹";position:absolute;right:16px;top:14px;font-size:30px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.12))}.heroText{position:relative;z-index:2;color:#fff}.heroText span{display:inline-block;background:rgba(255,255,255,.92);color:var(--rose);font-size:9px;font-weight:900;padding:5px 8px;border-radius:999px}.heroText h2{font-size:25px;line-height:1.08;margin:9px 0 6px;text-shadow:0 2px 10px rgba(0,0,0,.3)}.heroText p{font-size:11px;line-height:1.55;margin:0;max-width:290px}.heroBtn{margin-top:12px;border:0;background:#fff;color:var(--g);padding:10px 13px;border-radius:12px;font-weight:900;font-size:11px}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.quick button{border:1px solid var(--line);background:var(--card);border-radius:16px;padding:11px 4px;box-shadow:0 5px 15px rgba(22,53,44,.03);color:var(--ink)}.quick i{display:grid;place-items:center;width:35px;height:35px;margin:0 auto 6px;border-radius:12px;background:#eef8f4;font-style:normal;font-size:18px}.quick button:nth-child(2) i{background:var(--rose2)}.quick button:nth-child(3) i{background:#fff3e8}.quick small{font-size:9px;font-weight:800}
+.section{margin-top:18px}.sectionHead{display:flex;justify-content:space-between;align-items:center;margin:0 2px 9px}.sectionHead h3{font-size:17px;margin:0}.sectionHead button{border:0;background:transparent;color:var(--g);font-size:10px;font-weight:900}.story{display:flex;gap:9px;overflow-x:auto;scroll-snap-type:x mandatory;padding:1px 1px 6px}.story::-webkit-scrollbar{display:none}.storyCard{flex:0 0 78%;scroll-snap-align:start;border:1px solid var(--line);background:var(--card);border-radius:18px;overflow:hidden;box-shadow:0 6px 18px rgba(24,52,45,.04)}.storyPic{height:112px;background:linear-gradient(180deg,transparent,rgba(20,45,38,.15)),url("./aoi-street-real-20260925.jpg");background-size:cover;background-position:center}.storyCard:nth-child(2) .storyPic{background-position:35% 50%}.storyCard:nth-child(3) .storyPic{background-position:70% 50%}.storyBody{padding:11px}.pill{display:inline-block;font-size:8px;font-weight:900;padding:4px 7px;border-radius:999px;background:var(--rose2);color:var(--rose)}.storyBody h4{font-size:14px;margin:7px 0 5px}.storyBody p{font-size:10px;line-height:1.55;color:#66736f;margin:0}
+.storeRow{display:flex;gap:9px;overflow-x:auto;padding:1px 1px 5px}.storeRow::-webkit-scrollbar{display:none}.storeMini{flex:0 0 48%;background:#fff;border:1px solid var(--line);border-radius:18px;padding:11px;text-align:left}.storeMini .cover{height:78px;border-radius:13px;background:url("./hero.jpg?v=20260925");background-size:210%;background-position:center;margin-bottom:9px}.storeMini:nth-child(2) .cover{background-position:75% 50%}.storeMini:nth-child(3) .cover{background-position:25% 50%}.storeMini:nth-child(4) .cover{background-position:55% 50%}.storeMini b{font-size:12px;display:block}.storeMini small{font-size:9px;color:var(--muted);display:block;margin-top:3px}
+.event{display:flex;gap:11px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:17px;padding:11px;margin-bottom:8px}.date{width:52px;height:52px;border-radius:14px;background:#edf7f2;display:grid;place-items:center;font-size:10px;font-weight:900;color:var(--g);text-align:center}.event.rose .date{background:var(--rose2);color:var(--rose)}.event b{font-size:13px}.event p{font-size:9px;color:var(--muted);margin:4px 0 0}
+.search{position:sticky;top:72px;z-index:10;background:linear-gradient(var(--bg) 80%,transparent);padding-bottom:8px}.searchBox{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:15px;padding:11px 12px}.searchBox input{border:0;outline:0;width:100%;font-size:12px;background:transparent}
+.storeList{display:grid;gap:9px}.storeCard{display:grid;grid-template-columns:86px 1fr;gap:11px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px;text-align:left}.storeCard .thumb{border-radius:13px;background:url("./hero.jpg?v=20260925");background-size:240%;background-position:center;min-height:88px}.storeCard[data-k="iseya"] .thumb{background-position:70% 45%}.storeCard[data-k="seika"] .thumb{background-position:25% 50%}.storeCard[data-k="bakery"] .thumb{background-position:50% 55%}.storeCard h4{font-size:14px;margin:4px 0 4px}.storeCard p{font-size:9px;color:var(--muted);line-height:1.5;margin:0}.chips{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}.chip{font-size:8px;padding:4px 6px;background:#f2f5f3;border-radius:999px;color:#576963}
+.notice{background:#fff;border:1px solid var(--line);border-radius:18px;padding:13px;margin-bottom:9px}.noticeTop{display:flex;justify-content:space-between;gap:8px}.notice h4{font-size:14px;margin:6px 0}.notice p{font-size:10px;line-height:1.6;color:#66736f;margin:0}.time{font-size:8px;color:#97a09d}.notice .tag{font-size:8px;font-weight:900;color:var(--rose)}
+.profile{background:linear-gradient(145deg,#18473a,#0f6b54);color:#fff;border-radius:22px;padding:18px}.avatar{width:56px;height:56px;border-radius:50%;background:#fff;color:var(--g);display:grid;place-items:center;font-size:22px;font-weight:900}.profile h3{margin:10px 0 4px}.profile p{font-size:10px;color:#d4e6df;margin:0}.profileStats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:15px;border-top:1px solid rgba(255,255,255,.14);padding-top:13px}.profileStats div{text-align:center}.profileStats b{display:block;font-size:16px}.profileStats small{font-size:8px;color:#d4e6df}.menuCard{background:#fff;border:1px solid var(--line);border-radius:18px;margin-top:12px;overflow:hidden}.menuItem{width:100%;display:flex;align-items:center;justify-content:space-between;border:0;border-bottom:1px solid #f0ebe3;background:#fff;padding:14px;text-align:left}.menuItem:last-child{border-bottom:0}.menuItem span{font-size:12px}.menuItem small{color:var(--muted)}
+.bottom{position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:40;width:100%;max-width:480px;height:72px;padding-bottom:max(5px,env(safe-area-inset-bottom));background:rgba(255,253,249,.97);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr)}.navBtn{border:0;background:transparent;color:#7d8884;display:grid;place-items:center;align-content:center;gap:2px}.navBtn b{font-size:18px;line-height:1}.navBtn small{font-size:8px}.navBtn.active{color:var(--g);font-weight:900}
+.modal{position:fixed;inset:0;z-index:70;background:rgba(15,35,30,.45);display:none;align-items:flex-end}.modal.show{display:flex}.sheet{width:100%;max-width:480px;margin:0 auto;background:#fffdf9;border-radius:24px 24px 0 0;padding:10px 14px calc(18px + env(safe-area-inset-bottom));max-height:84dvh;overflow:auto}.handle{width:42px;height:4px;border-radius:99px;background:#d7d0c8;margin:0 auto 12px}.sheetHero{height:160px;border-radius:18px;background:url("./hero.jpg?v=20260925");background-size:cover;background-position:center}.sheetTop{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-top:12px}.sheet h3{margin:0;font-size:22px}.sheet p{font-size:10px;color:var(--muted);line-height:1.6}.closeBtn{border:0;background:#f2efea;width:34px;height:34px;border-radius:50%}.sheetActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.sheetActions button{border:0;border-radius:13px;padding:11px;font-weight:900;font-size:11px}.sheetActions .main{background:var(--g);color:#fff}.sheetActions .sub{background:var(--rose2);color:var(--rose)}
+.toast{position:fixed;left:50%;bottom:82px;transform:translate(-50%,14px);background:#173d33;color:white;padding:10px 13px;border-radius:12px;font-size:10px;opacity:0;transition:.2s;z-index:90;white-space:nowrap}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(min-width:700px){body{background:#dedbd5}.app{background:var(--bg);box-shadow:0 0 40px rgba(0,0,0,.1)}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="brand"><div class="logo">青</div><div><b>青井兵和通り</b><small>SHOPPING STREET APP</small></div></div>
+  <div class="topActions"><span class="demo">APP DEMO</span><button class="iconBtn" id="bell">🔔</button></div>
+</header>
+
+<main>
+<section class="page active" data-page="home">
+  <div class="hello"><div><small>こんにちは</small><h1>今日の青井へ。</h1></div><span class="weather">🌹 バラの町</span></div>
+  <div class="hero">
+    <div class="heroText"><span>ROSE TOWN AOI</span><h2>街を歩くと、<br>新しい発見がある。</h2><p>お店の新着・イベント・おすすめを、アプリでひとつに。</p><button class="heroBtn" data-go="stores">近くのお店を見る</button></div>
+  </div>
+  <div class="quick">
+    <button data-go="stores"><i>🏪</i><small>店舗検索</small></button>
+    <button id="coupon"><i>🎟️</i><small>クーポン</small></button>
+    <button id="eventJump"><i>📅</i><small>イベント</small></button>
+    <button id="favorite"><i>♡</i><small>お気に入り</small></button>
+  </div>
+
+  <div class="section">
+    <div class="sectionHead"><h3>今日のお知らせ</h3><button data-go="news">すべて見る</button></div>
+    <div class="story">
+      <article class="storyCard"><div class="storyPic"></div><div class="storyBody"><span class="pill">NEW</span><h4>秋の商店街おすすめ特集</h4><p>各店舗の今週のおすすめをアプリからチェックできます。</p></div></article>
+      <article class="storyCard"><div class="storyPic"></div><div class="storyBody"><span class="pill">伊勢屋</span><h4>秋の和菓子が登場</h4><p>季節限定商品の案内を店舗から直接更新するデモです。</p></div></article>
+      <article class="storyCard"><div class="storyPic"></div><div class="storyBody"><span class="pill">八百俊青果店</span><h4>本日のおすすめ野菜</h4><p>旬の商品や入荷情報をその日のうちに発信できます。</p></div></article>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sectionHead"><h3>お店を見つける</h3><button data-go="stores">一覧へ</button></div>
+    <div class="storeRow">
+      <button class="storeMini" data-store="nodelab"><div class="cover"></div><b>NODE LAB.</b><small>PC・スマホ修理</small></button>
+      <button class="storeMini" data-store="iseya"><div class="cover"></div><b>雲遊菓庵 伊勢屋</b><small>和菓子</small></button>
+      <button class="storeMini" data-store="seika"><div class="cover"></div><b>八百俊青果店</b><small>青果・果物</small></button>
+      <button class="storeMini" data-store="bakery"><div class="cover"></div><b>時風ベーカリー</b><small>ベーカリー</small></button>
+    </div>
+  </div>
+
+  <div class="section" id="events">
+    <div class="sectionHead"><h3>今週のイベント</h3><button>カレンダー</button></div>
+    <article class="event"><div class="date">9/27<br>日</div><div><b>商店街 朝市</b><p>7:00–9:00 / 青井兵和通り</p></div></article>
+    <article class="event rose"><div class="date">ROSE<br>WEEK</div><div><b>バラの町 フォトスポット巡り</b><p>店先や花壇のバラを楽しみながら街歩き。</p></div></article>
+  </div>
+</section>
+
+<section class="page" data-page="stores">
+  <div class="hello"><div><small>SHOP SEARCH</small><h1>お店を探す</h1></div></div>
+  <div class="search"><div class="searchBox">🔎<input id="shopSearch" placeholder="店名・カテゴリで検索"></div></div>
+  <div class="storeList" id="storeList">
+    <button class="storeCard" data-k="nodelab" data-store="nodelab"><div class="thumb"></div><div><h4>NODE LAB.</h4><p>スマホ・PC修理 / デジタルサポート</p><div class="chips"><span class="chip">修理</span><span class="chip">PC</span></div></div></button>
+    <button class="storeCard" data-k="iseya" data-store="iseya"><div class="thumb"></div><div><h4>雲遊菓庵 伊勢屋</h4><p>季節の和菓子・贈答・予約</p><div class="chips"><span class="chip">和菓子</span><span class="chip">季節商品</span></div></div></button>
+    <button class="storeCard" data-k="seika" data-store="seika"><div class="thumb"></div><div><h4>八百俊青果店</h4><p>青果・果物 / 本日のおすすめ</p><div class="chips"><span class="chip">青果</span><span class="chip">入荷情報</span></div></div></button>
+    <button class="storeCard" data-k="bakery" data-store="bakery"><div class="thumb"></div><div><h4>時風ベーカリー</h4><p>パン・焼き菓子 / 新商品</p><div class="chips"><span class="chip">パン</span><span class="chip">焼き菓子</span></div></div></button>
+  </div>
+</section>
+
+<section class="page" data-page="news">
+  <div class="hello"><div><small>NEWS & UPDATE</small><h1>最新情報</h1></div></div>
+  <article class="notice"><div class="noticeTop"><span class="tag">商店街から</span><span class="time">今日 10:30</span></div><h4>今週末は朝市を開催します</h4><p>9月27日 7:00–9:00。各店舗のおすすめ商品をお楽しみください。</p></article>
+  <article class="notice"><div class="noticeTop"><span class="tag">雲遊菓庵 伊勢屋</span><span class="time">今日 9:10</span></div><h4>秋限定の和菓子を販売します</h4><p>数量限定の季節商品を今週末から販売します。</p></article>
+  <article class="notice"><div class="noticeTop"><span class="tag">八百俊青果店</span><span class="time">昨日 17:20</span></div><h4>旬の秋野菜が入荷しました</h4><p>本日のおすすめ商品を店舗から直接更新しています。</p></article>
+  <article class="notice"><div class="noticeTop"><span class="tag">NODE LAB.</span><span class="time">昨日 12:00</span></div><h4>スマホ・PCのお困りごと相談</h4><p>修理や設定、データ移行などの相談を受け付けています。</p></article>
+</section>
+
+<section class="page" data-page="my">
+  <div class="hello"><div><small>MY AOI</small><h1>マイページ</h1></div></div>
+  <div class="profile"><div class="avatar">青</div><h3>青井アプリ デモユーザー</h3><p>お気に入りのお店と商店街のお知らせをまとめて確認。</p><div class="profileStats"><div><b>3</b><small>お気に入り</small></div><div><b>2</b><small>クーポン</small></div><div><b>4</b><small>通知</small></div></div></div>
+  <div class="menuCard">
+    <button class="menuItem"><span>♡ お気に入り店舗</span><small>3件 ›</small></button>
+    <button class="menuItem"><span>🎟️ 保存したクーポン</span><small>2件 ›</small></button>
+    <button class="menuItem"><span>🔔 通知設定</span><small>›</small></button>
+    <button class="menuItem" id="webDemo"><span>🌐 Web版デモを見る</span><small>↗</small></button>
+  </div>
+</section>
+</main>
+</div>
+
+<nav class="bottom">
+  <button class="navBtn active" data-nav="home"><b>⌂</b><small>ホーム</small></button>
+  <button class="navBtn" data-nav="stores"><b>店</b><small>お店</small></button>
+  <button class="navBtn" data-nav="news"><b>告</b><small>お知らせ</small></button>
+  <button class="navBtn" data-nav="my"><b>人</b><small>マイ</small></button>
+</nav>
+
+<div class="modal" id="storeModal"><div class="sheet"><div class="handle"></div><div class="sheetHero"></div><div class="sheetTop"><div><h3 id="modalName"></h3><p id="modalCat"></p></div><button class="closeBtn" id="closeModal">×</button></div><p id="modalIntro"></p><div class="sheetActions"><button class="main" id="modalOfficial">店舗情報を見る</button><button class="sub" id="modalFav">♡ お気に入り</button></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const stores={
+nodelab:{name:'NODE LAB.',cat:'スマホ・PC修理 / デジタルサポート',intro:'修理・設定・データ移行など、デジタル機器のお困りごとを相談できる店舗です。',url:'https://aoiheiwa.com/archives/691'},
+iseya:{name:'雲遊菓庵 伊勢屋',cat:'和菓子',intro:'季節の和菓子や予約情報などを、店舗から直接発信する想定です。',url:'https://aoiheiwa.com/archives/215'},
+seika:{name:'八百俊青果店',cat:'青果・果物',intro:'旬の商品、本日のおすすめ、入荷情報をその日のうちに更新できます。',url:'https://aoiheiwa.com/archives/197'},
+bakery:{name:'時風ベーカリー',cat:'ベーカリー',intro:'新商品や焼き上がり情報など、来店につながる情報をスマホから発信します。',url:'https://aoiheiwa.com/archives/482'}
+};
+const pages=[...document.querySelectorAll('.page')],nav=[...document.querySelectorAll('.navBtn')];
+function go(name){pages.forEach(p=>p.classList.toggle('active',p.dataset.page===name));nav.forEach(n=>n.classList.toggle('active',n.dataset.nav===name));scrollTo({top:0,behavior:'smooth'})}
+document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>go(b.dataset.nav));
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+const toast=document.getElementById('toast');function showToast(t){toast.textContent=t;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1600)}
+document.getElementById('bell').onclick=()=>showToast('新しいお知らせが4件あります（デモ）');
+document.getElementById('coupon').onclick=()=>showToast('クーポン機能はPoCで実装予定です');
+document.getElementById('favorite').onclick=()=>showToast('お気に入り3店舗を保存中（デモ）');
+document.getElementById('eventJump').onclick=()=>document.getElementById('events').scrollIntoView({behavior:'smooth'});
+document.getElementById('webDemo').onclick=()=>location.href='./';
+const modal=document.getElementById('storeModal');let currentStore='nodelab';
+function openStore(k){currentStore=k;const s=stores[k];document.getElementById('modalName').textContent=s.name;document.getElementById('modalCat').textContent=s.cat;document.getElementById('modalIntro').textContent=s.intro;modal.classList.add('show')}
+document.querySelectorAll('[data-store]').forEach(b=>b.onclick=()=>openStore(b.dataset.store));
+document.getElementById('closeModal').onclick=()=>modal.classList.remove('show');
+modal.onclick=e=>{if(e.target===modal)modal.classList.remove('show')};
+document.getElementById('modalOfficial').onclick=()=>window.open(stores[currentStore].url,'_blank','noopener');
+document.getElementById('modalFav').onclick=()=>showToast(stores[currentStore].name+' をお気に入りに追加（デモ）');
+document.getElementById('shopSearch').addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('.storeCard').forEach(c=>c.style.display=c.textContent.toLowerCase().includes(q)?'grid':'none')});
+</script>
+</body>
+</html>
