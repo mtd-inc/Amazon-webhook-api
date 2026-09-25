@@ -13,7 +13,42 @@ main{padding:14px 12px 84px;max-width:1100px;margin:auto}.heroCopy{background:va
 .section{margin-top:14px;background:white;border:1px solid #e7dfd4;border-radius:22px;padding:15px}.sectionHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.sectionHead h2{font-size:20px;margin:0}.news{display:grid;grid-template-columns:1fr 1fr;gap:9px}.news article{border:1px solid #eee7dd;border-radius:14px;padding:10px}.pic{height:74px;border-radius:11px;background:linear-gradient(135deg,#fde4eb,#efa8bd)}.news article:nth-child(2) .pic{background:linear-gradient(135deg,#dcedc8,#75ac59)}.news article:nth-child(3) .pic{background:linear-gradient(135deg,#fbe9ce,#e2b276)}.news h3{font-size:13px;line-height:1.35;margin:8px 0 5px}.news p{font-size:10px;line-height:1.5;color:#65736e;margin:0}.events{display:grid;gap:8px}.event{display:grid;grid-template-columns:54px 1fr;gap:10px;border:1px solid #eee7dd;border-radius:14px;padding:10px}.date{display:grid;place-items:center;background:#f5f0e8;border-radius:12px;font-size:11px;font-weight:900}.event h3{font-size:14px;margin:0 0 4px}.event p{font-size:10px;color:#65736e;margin:0;line-height:1.5}
 .bottom{position:fixed;left:0;right:0;bottom:0;z-index:30;height:62px;background:rgba(255,253,249,.98);border-top:1px solid #e4ddd3;display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:max(0px,env(safe-area-inset-bottom))}.bottom a{display:grid;place-items:center;align-content:center;text-decoration:none;color:#6e7b76;font-size:14px}.bottom a.active{color:var(--g);font-weight:900}.bottom small{font-size:9px;margin-top:2px}.toast{position:fixed;right:14px;bottom:76px;background:#173d33;color:white;padding:10px 12px;border-radius:12px;font-size:11px;opacity:0;transform:translateY(12px);transition:.2s;z-index:50}.toast.show{opacity:1;transform:none}
 @media(min-width:860px){main{display:grid;grid-template-columns:320px 1fr 380px;gap:14px}.heroCopy{grid-column:1;grid-row:1}.street{grid-column:2;grid-row:1;height:640px;margin-top:0}.switch{display:none}.panel{grid-column:3;grid-row:1;margin-top:0}.section{grid-column:1 / -1}.updates{display:grid}.update{min-width:0}.bottom{display:none}.heroCopy h1{font-size:54px}.news{grid-template-columns:repeat(3,1fr)}}
-</style></head>
+</style><style id="aoi-real-hero-v3">
+.street{
+  position:relative!important;
+  height:560px!important;
+  border-radius:22px!important;
+  overflow:hidden!important;
+  margin-top:12px!important;
+  background-image:url('aoi-street-real-20260925.jpg?v=3')!important;
+  background-size:cover!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+  border:1px solid #e8dfd3!important;
+  box-shadow:0 14px 32px rgba(24,52,45,.10)!important;
+}
+.street:before,.street .banner,.street .shop{display:none!important}
+.marker{
+  z-index:5!important;
+  background:rgba(255,255,255,.95)!important;
+  border:1px solid rgba(255,255,255,.98)!important;
+  box-shadow:0 8px 22px rgba(22,44,38,.22)!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+.m3{left:5%!important;top:30%!important}
+.m4{left:auto!important;right:5%!important;top:30%!important}
+.m1{left:5%!important;top:70%!important}
+.m2{left:auto!important;right:5%!important;top:70%!important}
+@media(max-width:420px){
+  .street{height:550px!important;background-position:center center!important}
+  .marker{font-size:9px!important;padding:8px 9px!important}
+}
+@media(min-width:860px){
+  .street{height:640px!important}
+}
+</style>
+</head>
 <body><header><div class="brand"><div class="logo">青</div><div><b>青井兵和通り商店街</b><small>スマホ優先デモ</small></div></div><span class="demo">DEMO</span></header>
 <main>
 <section class="heroCopy"><span class="eyebrow">写真の中のお店をタップ</span><h1>商店街から<span>お店を探す</span></h1><p>気になる店舗をタップすると、そのお店のHP・アプリの最新更新が表示されます。</p><div class="ctaRow"><button class="primary" data-key="nodelab">NODE LAB.</button><button class="secondary" data-key="iseya">伊勢屋</button></div></section>
