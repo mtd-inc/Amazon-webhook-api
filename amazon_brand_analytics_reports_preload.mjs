@@ -3,7 +3,7 @@ import fetch from "node-fetch";
 import { gunzipSync } from "node:zlib";
 import "dotenv/config";
 
-const MODULE_VERSION = "2026-10-01-brand-analytics-reports-v1.0.1";
+const MODULE_VERSION = "2026-10-01-brand-analytics-reports-v1.0.2";
 const ROUTE_PREFIX = "/amazon/analytics/brand";
 const REPORTS_API_VERSION = "2021-06-30";
 const DEFAULT_MARKETPLACE_ID = "A1VC38T7YXB528";
@@ -206,7 +206,7 @@ async function createAnalyticsReport({ kind, period, asins }) {
   const c = assertSpApiEnv();
   const accessToken = await getLwaAccessToken();
   const reportOptions = { reportPeriod: period.reportPeriod };
-  if (kind === "SQP" && asins.length) reportOptions.asins = asins.join(" ");
+  if (kind === "SQP" && asins.length) reportOptions.asin = asins.join(" ");
 
   const requestBody = {
     reportType: REPORT_TYPES[kind],
