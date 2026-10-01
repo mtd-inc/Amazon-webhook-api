@@ -480,8 +480,8 @@ function register(app) {
   app.get(`${ROUTE_PREFIX}/reports/:reportId`, requireSecret, async (req, res) => {
     try {
       const report = await getReport(String(req.params.reportId || "").trim());
-      return res.status(status === "FATAL" ? 422 : 200).json({
-        ok: status !== "FATAL",
+      return res.status(200).json({
+        ok: true,
         moduleVersion: MODULE_VERSION,
         readOnly: true,
         commerceMutations: 0,
@@ -531,8 +531,8 @@ function register(app) {
       const accessToken = await getLwaAccessToken();
       const meta = await getReportDocumentMeta(report.reportDocumentId, accessToken);
       const data = await downloadReportDocument(meta);
-      return res.status(200).json({
-        ok: true,
+      return res.status(status === "FATAL" ? 422 : 200).json({
+        ok: status !== "FATAL",
         moduleVersion: MODULE_VERSION,
         readOnly: true,
         commerceMutations: 0,
