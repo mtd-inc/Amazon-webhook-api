@@ -3,7 +3,7 @@ import fetch from "node-fetch";
 import { gunzipSync } from "node:zlib";
 import "dotenv/config";
 
-const MODULE_VERSION = "2026-10-01-brand-analytics-reports-v1.0.0";
+const MODULE_VERSION = "2026-10-01-brand-analytics-reports-v1.0.1";
 const ROUTE_PREFIX = "/amazon/analytics/brand";
 const REPORTS_API_VERSION = "2021-06-30";
 const DEFAULT_MARKETPLACE_ID = "A1VC38T7YXB528";
@@ -307,6 +307,67 @@ async function collect(kind, body) {
   const report = await pollUntilTerminal(created.reportId, maxWaitSeconds);
   const status = String(report.processingStatus || "").toUpperCase();
 
+  if (status === "FATAL") {
+    let fatalDocument = null;
+    let fatalDocumentError = "";
+    if (report.reportDocumentId) {
+      try {
+        const accessToken = await getLwaAccessToken();
+        const meta = await getReportDocumentMeta(report.reportDocumentId, accessToken);
+        fatalDocument = await downloadReportDocument(meta);
+      } catch (err) {
+        fatalDocumentError = safeError(err).message;
+      }
+    }
+    return {
+      httpStatus: 422,
+      payload: {
+        ok: false,
+        moduleVersion: MODULE_VERSION,
+        route: `${ROUTE_PREFIX}/${kind.toLowerCase()}/collect`,
+        readOnly: true,
+        commerceMutations: 0,
+        externalChanges: 0,
+        kind,
+        reportType: REPORT_TYPES[kind],
+        reportId: created.reportId,
+        reportDocumentId: report.reportDocumentId || "",
+        processingStatus: status,
+        dataStartDate: period.dataStartDate,
+        dataEndDate: period.dataEndDate,
+        reportPeriod: period.reportPeriod,
+        asins,
+        requestBody: created.requestBody,
+        fatalDocument,
+        fatalDocumentError,
+      },
+    };
+  }
+
+  if (status === "CANCELLED") {
+    return {
+      httpStatus: 200,
+      payload: {
+        ok: true,
+        moduleVersion: MODULE_VERSION,
+        route: `${ROUTE_PREFIX}/${kind.toLowerCase()}/collect`,
+        readOnly: true,
+        commerceMutations: 0,
+        externalChanges: 0,
+        kind,
+        reportType: REPORT_TYPES[kind],
+        reportId: created.reportId,
+        processingStatus: status,
+        dataStartDate: period.dataStartDate,
+        dataEndDate: period.dataEndDate,
+        reportPeriod: period.reportPeriod,
+        asins,
+        rowCount: 0,
+        data: [],
+      },
+    };
+  }
+
   if (status !== "DONE") {
     return {
       httpStatus: 202,
@@ -444,7 +505,7 @@ function register(app) {
     try {
       const report = await getReport(String(req.params.reportId || "").trim());
       const status = String(report.processingStatus || "").toUpperCase();
-      if (status !== "DONE") {
+      if (status !== "DONE" && status !== "FATAL") {
         return res.status(202).json({
           ok: true,
           moduleVersion: MODULE_VERSION,
@@ -455,12 +516,23 @@ function register(app) {
           reportId: report.reportId || req.params.reportId,
         });
       }
-      if (!report.reportDocumentId) throw new Error("DONE report missing reportDocumentId");
+      if (!report.reportDocumentId) {
+        return res.status(status === "FATAL" ? 422 : 400).json({
+          ok: status !== "FATAL",
+          moduleVersion: MODULE_VERSION,
+          readOnly: true,
+          commerceMutations: 0,
+          externalChanges: 0,
+          processingStatus: status,
+          reportId: report.reportId || req.params.reportId,
+          error: status === "FATAL" ? "FATAL report has no reportDocumentId" : "DONE report missing reportDocumentId",
+        });
+      }
       const accessToken = await getLwaAccessToken();
       const meta = await getReportDocumentMeta(report.reportDocumentId, accessToken);
       const data = await downloadReportDocument(meta);
-      return res.status(200).json({
-        ok: true,
+      return res.status(status === "FATAL" ? 422 : 200).json({
+        ok: status !== "FATAL",
         moduleVersion: MODULE_VERSION,
         readOnly: true,
         commerceMutations: 0,
