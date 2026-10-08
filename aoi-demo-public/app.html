@@ -42,6 +42,22 @@ button,input{font:inherit}button{cursor:pointer}.app{width:100%;max-width:480px;
 .nextPage .notice{background:#fff0f3;border:1px solid #f2d3dc;border-radius:14px;padding:12px;margin:18px 0;color:#795663;font-size:10px;line-height:1.7}
 .nextPage a{font-size:11px;color:#0f5b49;font-weight:900;display:block;margin:16px 0}
 </style>
+
+<style id="rose-app-v1-styles">
+.roseAppCard{margin:15px;padding:18px;border:1px solid #edd4dc;border-radius:21px;background:linear-gradient(145deg,#ffedf1,#fff9f5 70%,#eaf4ee)}
+.roseAppCard .roseAppEy{font-weight:900;font-size:9px;letter-spacing:.1em;color:#ba5a77}
+.roseAppCard h3{color:#17382f;font-size:20px;margin:8px 0}
+.roseAppCard p{font-size:11px;color:#6a7772;line-height:1.7;margin:0 0 12px}
+.roseAppCard button,.roseAppBody .roseBtn{border:0;background:#0f5b49;color:#fff;border-radius:999px;padding:11px 16px;font-size:11px;font-weight:900}
+.roseAppBody{padding:20px 17px 95px;color:#17382f}.roseAppBody h1{font-size:27px;line-height:1.25;margin:8px 0 12px}
+.roseAppBody p{color:#6a7772;line-height:1.8;font-size:12px}.roseAppBody .ey{color:#ba5a77;letter-spacing:.1em;font-size:9px;font-weight:900}
+.roseAppBody .roseAppItem{background:#fff;border:1px solid #e9dce0;border-radius:18px;margin:9px 0;padding:15px;width:100%;display:flex;gap:10px;text-align:left;color:#17382f;align-items:center;font-size:12px}
+.roseAppBody .roseAppItem span{font-size:21px}.roseAppBody .roseAppItem.on{background:#e6f5ec;border-color:#60a886}
+.roseAppBody .roseAppItem strong{display:block;font-size:12px}.roseAppBody .roseAppItem small{display:block;color:#6a7772;font-size:9px;line-height:1.5;margin-top:4px}
+.roseAppBody .roseAppProgress{background:#fff;border:1px solid #edd4dc;padding:13px;border-radius:14px;margin:13px 0;font-size:11px;font-weight:900;color:#0f5b49}
+.roseAppBody .roseAppWarning{font-size:10px;color:#986b73;border:1px solid #efdae0;background:#fff6f8;border-radius:12px;padding:12px;line-height:1.6;margin:14px 0}
+.roseAppBody .roseAppRef{display:block;color:#0f5b49;font-weight:900;font-size:10px;text-decoration:underline;margin:18px 0}
+</style>
 </head>
 <body>
 <div class="app">
@@ -83,6 +99,14 @@ button,input{font:inherit}button{cursor:pointer}.app{width:100%;max-width:480px;
   </div>
 
 
+
+  <div class="roseAppCard" aria-label="バラのまち青井の回遊体験">
+    <div class="roseAppEy">🌹 AOI ROSE WALK / 春・秋の見頃</div>
+    <h3>バラのまちを、ひと歩き。</h3>
+    <p>青和ばら公園から兵和通りへ。既存の青井バラまつりと連携する回遊企画を、デモで体験できます。</p>
+    <button data-go="rose">🌹 バラ散歩デモを開く →</button>
+  </div>
+
   <div class="nextAppCard" aria-label="新しいお店のチャレンジ">
     <div class="ey">AOI CHALLENGE / 活性化構想デモ</div>
     <h3>次のお気に入りは、ここから。</h3>
@@ -93,7 +117,7 @@ button,input{font:inherit}button{cursor:pointer}.app{width:100%;max-width:480px;
   <div class="section" id="events">
     <div class="sectionHead"><h3>商店街の催し</h3><button data-go="challenge">活性化構想 ›</button></div>
     <article class="event"><div class="date">毎月<br>第4日</div><div><b>商店街 朝市</b><p>第4日曜日 7:00–9:00 / 開催日は公式発表を確認</p></div></article>
-    <article class="event rose"><div class="date">ROSE<br>WEEK</div><div><b>バラの町 フォトスポット巡り</b><p>店先や花壇のバラを楽しみながら街歩き。</p></div></article>
+    <article class="event rose"><div class="date">ROSE<br>WALK</div><div><b>バラの町 フォトスポット巡り</b><p>店先や花壇のバラを楽しみながら街歩き。</p></div></article>
   </div>
 </section>
 
@@ -124,6 +148,23 @@ button,input{font:inherit}button{cursor:pointer}.app{width:100%;max-width:480px;
     <button class="menuItem"><span>🎟️ 保存したクーポン</span><small>2件 ›</small></button>
     <button class="menuItem"><span>🔔 通知設定</span><small>›</small></button>
     <button class="menuItem" id="webDemo"><span>🌐 Web版デモを見る</span><small>↗</small></button>
+  </div>
+</section>
+
+
+<section class="page" data-page="rose">
+  <div class="roseAppBody">
+    <span class="ey">AOI ROSE WALK / PROPOSAL DEMO</span>
+    <h1>バラを見て、<br>青井のお店に出会う。</h1>
+    <p>青和ばら公園には約100種880株のバラ。例年5月上旬〜下旬と10月上旬〜下旬に見頃を迎えます。既存の青井バラまつりを尊重し、商店街への回遊を後押しする構想です。</p>
+    <p style="font-size:10px;font-weight:900;color:#b75a72">タップしてデジタルスタンプを体験</p>
+    <button class="roseAppItem" data-roseapp-stamp="0" aria-pressed="false"><span>🌹</span><div><strong>01　青和ばら公園</strong><small>公園でバラを鑑賞（実在）</small></div></button>
+    <button class="roseAppItem" data-roseapp-stamp="1" aria-pressed="false"><span>📷</span><div><strong>02　駅から街を歩く</strong><small>まち歩きを促す導線（構想）</small></div></button>
+    <button class="roseAppItem" data-roseapp-stamp="2" aria-pressed="false"><span>🏪</span><div><strong>03　兵和通りでお店を発見</strong><small>買物・飲食・チャレンジ出店（構想）</small></div></button>
+    <div class="roseAppProgress" id="roseAppProgress" role="status" aria-live="polite">🌹 スタンプ 0 / 3</div>
+    <div class="roseAppWarning">提案用の架空のスタンプ体験です。正式な参加店舗・特典・開催時期は未決定です。実際の来街・GPS位置は判定していません。</div>
+    <a class="roseAppRef" href="https://www.city.adachi.tokyo.jp/k-iji/shisetsu/koen/012.html" target="_blank" rel="noopener">青和ばら公園の公式情報を見る ↗</a>
+    <button class="roseBtn" data-go="stores">商店街のお店を見にいく →</button>
   </div>
 </section>
 
@@ -180,6 +221,9 @@ modal.onclick=e=>{if(e.target===modal)modal.classList.remove('show')};
 document.getElementById('modalOfficial').onclick=()=>window.open(stores[currentStore].url,'_blank','noopener');
 document.getElementById('modalFav').onclick=()=>showToast(stores[currentStore].name+' をお気に入りに追加（デモ）');
 document.getElementById('shopSearch').addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('.storeCard').forEach(c=>c.style.display=c.textContent.toLowerCase().includes(q)?'grid':'none')});
+</script>
+<script id="roseapp-stamp-demo">
+(function(){var flags={};var buttons=[].slice.call(document.querySelectorAll('[data-roseapp-stamp]'));var out=document.getElementById('roseAppProgress');buttons.forEach(function(b){b.addEventListener('click',function(){var k=b.getAttribute('data-roseapp-stamp');flags[k]=!flags[k];b.classList.toggle('on',flags[k]);b.setAttribute('aria-pressed',String(Boolean(flags[k])));var c=Object.values(flags).filter(Boolean).length;out.textContent=c===3?'🌹 スタンプ 3 / 3 達成（デモ専用・特典なし）':'🌹 スタンプ '+c+' / 3';});});})();
 </script>
 </body>
 </html>
