@@ -29,6 +29,19 @@ button,input{font:inherit}button{cursor:pointer}.app{width:100%;max-width:480px;
 .toast{position:fixed;left:50%;bottom:82px;transform:translate(-50%,14px);background:#173d33;color:white;padding:10px 13px;border-radius:12px;font-size:10px;opacity:0;transition:.2s;z-index:90;white-space:nowrap}.toast.show{opacity:1;transform:translate(-50%,0)}
 @media(min-width:700px){body{background:#dedbd5}.app{background:var(--bg);box-shadow:0 0 40px rgba(0,0,0,.1)}}
 </style>
+
+<style id="aoi-next-app-style">
+.nextAppCard{margin:16px 15px;padding:18px;border-radius:21px;background:linear-gradient(135deg,#e8f5ed,#fffdf8);border:1px solid #cfe5d8}
+.nextAppCard .ey{font-size:9px;font-weight:900;letter-spacing:.12em;color:#1f7a63}
+.nextAppCard h3{font-size:19px;margin:8px 0;color:#17382f}
+.nextAppCard p{font-size:11px;line-height:1.7;color:#5e7167;margin:0 0 13px}
+.nextAppCard button,.nextPage button{background:#0f5b49;color:white;border:0;border-radius:999px;padding:11px 15px;font-size:11px;font-weight:900;cursor:pointer}
+.nextPage{padding:22px 17px 95px;color:#17382f}.nextPage h1{font-size:27px;margin:10px 0}.nextPage .lead{color:#61766b;font-size:12px;line-height:1.8}.nextPage .step{display:flex;gap:12px;background:#fff;border:1px solid #e9e0d6;border-radius:15px;padding:13px;margin:9px 0}
+.nextPage .num{background:#e7f4ec;color:#0f5b49;border-radius:11px;font-size:12px;font-weight:900;display:grid;place-items:center;width:38px;height:38px;flex-shrink:0}
+.nextPage h4{margin:0 0 5px}.nextPage p{color:#61766b;font-size:11px;line-height:1.65;margin:0}
+.nextPage .notice{background:#fff0f3;border:1px solid #f2d3dc;border-radius:14px;padding:12px;margin:18px 0;color:#795663;font-size:10px;line-height:1.7}
+.nextPage a{font-size:11px;color:#0f5b49;font-weight:900;display:block;margin:16px 0}
+</style>
 </head>
 <body>
 <div class="app">
@@ -69,9 +82,17 @@ button,input{font:inherit}button{cursor:pointer}.app{width:100%;max-width:480px;
     </div>
   </div>
 
+
+  <div class="nextAppCard" aria-label="新しいお店のチャレンジ">
+    <div class="ey">AOI CHALLENGE / 活性化構想デモ</div>
+    <h3>次のお気に入りは、ここから。</h3>
+    <p>1日出店から常設へ。新しいお店を地域と一緒に育てる仕組みを、アプリからも体験できます。</p>
+    <button data-go="challenge">🌱 出店チャレンジを見てみる →</button>
+  </div>
+
   <div class="section" id="events">
-    <div class="sectionHead"><h3>今週のイベント</h3><button>カレンダー</button></div>
-    <article class="event"><div class="date">9/27<br>日</div><div><b>商店街 朝市</b><p>7:00–9:00 / 青井兵和通り</p></div></article>
+    <div class="sectionHead"><h3>商店街の催し</h3><button data-go="challenge">活性化構想 ›</button></div>
+    <article class="event"><div class="date">毎月<br>第4日</div><div><b>商店街 朝市</b><p>第4日曜日 7:00–9:00 / 開催日は公式発表を確認</p></div></article>
     <article class="event rose"><div class="date">ROSE<br>WEEK</div><div><b>バラの町 フォトスポット巡り</b><p>店先や花壇のバラを楽しみながら街歩き。</p></div></article>
   </div>
 </section>
@@ -105,6 +126,22 @@ button,input{font:inherit}button{cursor:pointer}.app{width:100%;max-width:480px;
     <button class="menuItem" id="webDemo"><span>🌐 Web版デモを見る</span><small>↗</small></button>
   </div>
 </section>
+
+<section class="page" data-page="challenge">
+  <div class="nextPage">
+    <span class="pill">AOI CHALLENGE / DEMO</span>
+    <h1>新しいお店が生まれる街へ。</h1>
+    <p class="lead">イベントに出ることだけがゴールではありません。小さな挑戦を常設店舗へつなぐ「商店街の出店ファネル」を提案しています。</p>
+    <div class="step"><div class="num">01</div><div><h4>イベントで1日出店</h4><p>店や商品の手応えを地域の方と直接確かめる。</p></div></div>
+    <div class="step"><div class="num">02</div><div><h4>週末・短期でテスト</h4><p>売上、運営の継続性、住民との相性を確認。</p></div></div>
+    <div class="step"><div class="num">03</div><div><h4>空き店舗とのマッチング</h4><p>賃料や設備、立地と業態を照合。</p></div></div>
+    <div class="step"><div class="num">04</div><div><h4>常設出店と定着支援</h4><p>HP・アプリ・AI販促で、開業後も継続的に応援。</p></div></div>
+    <div class="notice">この画面は提案用の構想デモです。現在、新規出店受付・空き物件登録等の正式サービスを運営しているという表示ではありません。</div>
+    <a href="https://aoiheiwa.com/shopkeeper" target="_blank" rel="noopener">現在の商店街イベント出店問い合わせ（公式） ↗</a>
+    <button data-go="home">← ホームへ戻る</button>
+  </div>
+</section>
+
 </main>
 </div>
 
