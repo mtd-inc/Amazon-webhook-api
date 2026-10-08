@@ -58,7 +58,21 @@ button,input{font:inherit}button{cursor:pointer}.app{width:100%;max-width:480px;
 .roseAppBody .roseAppWarning{font-size:10px;color:#986b73;border:1px solid #efdae0;background:#fff6f8;border-radius:12px;padding:12px;line-height:1.6;margin:14px 0}
 .roseAppBody .roseAppRef{display:block;color:#0f5b49;font-weight:900;font-size:10px;text-decoration:underline;margin:18px 0}
 </style>
-</head>
+<style id="app-polish-v12">
+.categoryFilters{display:flex;gap:7px;overflow-x:auto;margin:9px 0 13px;padding:1px}
+.categoryFilters button{white-space:nowrap;background:#fff;border:1px solid var(--line);border-radius:99px;color:var(--ink);font-size:10px;padding:9px 12px;font-weight:800}
+.categoryFilters button.active{background:var(--g);color:white;border-color:var(--g)}
+.filterCount{font-size:10px;color:var(--muted);margin:7px 2px 12px}
+.savedStore{background:white;border:1px solid var(--line);padding:15px;display:block;width:100%;border-radius:15px;margin:10px 0;text-align:left;color:var(--ink)}
+.savedStore strong,.savedStore span{display:block}.savedStore span{font-size:10px;margin-top:5px;color:var(--muted)}
+.demoPage{padding:19px 16px 110px}.demoPage h1{font-size:26px;margin:10px 0}.demoPage p{color:var(--muted);font-size:11px;line-height:1.8}
+.demoCoupon{background:#fff;border:1px dashed #c88198;padding:17px;border-radius:18px;margin:12px 0}
+.demoCoupon h3{font-size:17px;margin:8px 0}.demoCoupon button,.smallDemoBtn{border:0;background:var(--g);color:#fff;border-radius:30px;padding:10px 15px;font-size:11px;font-weight:800}
+.demoNote{font-size:10px;color:#99586a;background:#fff1f4;padding:12px;border-radius:12px;line-height:1.7;margin:15px 0}
+.demoPage .event{margin-top:12px}.demoPage a{font-weight:800;font-size:11px;color:var(--g)}
+.demoPage input[type=checkbox]{width:21px;height:21px;accent-color:var(--g)}
+.demoSettings{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);background:#fff;border-radius:16px;padding:16px;margin:16px 0}
+</style></head>
 <body>
 <div class="app">
 <header class="top">
@@ -115,7 +129,7 @@ button,input{font:inherit}button{cursor:pointer}.app{width:100%;max-width:480px;
   </div>
 
   <div class="section" id="events">
-    <div class="sectionHead"><h3>商店街の催し</h3><button data-go="challenge">活性化構想 ›</button></div>
+    <div class="sectionHead"><h3>商店街の催し</h3><button id="eventCalendar">イベント一覧 ›</button></div>
     <article class="event"><div class="date">毎月<br>第4日</div><div><b>商店街 朝市</b><p>第4日曜日 7:00–9:00 / 開催日は公式発表を確認</p></div></article>
     <article class="event rose"><div class="date">ROSE<br>WALK</div><div><b>バラの町 フォトスポット巡り</b><p>店先や花壇のバラを楽しみながら街歩き。</p></div></article>
   </div>
@@ -123,35 +137,39 @@ button,input{font:inherit}button{cursor:pointer}.app{width:100%;max-width:480px;
 
 <section class="page" data-page="stores">
   <div class="hello"><div><small>SHOP SEARCH</small><h1>お店を探す</h1></div></div>
-  <div class="search"><div class="searchBox">🔎<input id="shopSearch" placeholder="店名・カテゴリで検索"></div></div>
+  <div class="search"><div class="searchBox">🔎<input id="shopSearch" placeholder="店名・カテゴリで検索"></div></div><div class="categoryFilters" aria-label="店舗カテゴリ"><button class="active" aria-pressed="true" data-category-filter="all">すべて</button><button aria-pressed="false" data-category-filter="food">食べる</button><button aria-pressed="false" data-category-filter="shopping">買う</button><button aria-pressed="false" data-category-filter="service">サービス</button></div><p class="filterCount" id="filterCount"></p>
   <div class="storeList" id="storeList">
-    <button class="storeCard" data-k="nodelab" data-store="nodelab"><div class="thumb"></div><div><h4>NODE LAB.</h4><p>スマホ・PC修理 / デジタルサポート</p><div class="chips"><span class="chip">修理</span><span class="chip">PC</span></div></div></button>
-    <button class="storeCard" data-k="iseya" data-store="iseya"><div class="thumb"></div><div><h4>雲遊菓庵 伊勢屋</h4><p>季節の和菓子・贈答・予約</p><div class="chips"><span class="chip">和菓子</span><span class="chip">季節商品</span></div></div></button>
-    <button class="storeCard" data-k="seika" data-store="seika"><div class="thumb"></div><div><h4>八百俊青果店</h4><p>青果・果物 / 本日のおすすめ</p><div class="chips"><span class="chip">青果</span><span class="chip">入荷情報</span></div></div></button>
-    <button class="storeCard" data-k="bakery" data-store="bakery"><div class="thumb"></div><div><h4>時風ベーカリー</h4><p>パン・焼き菓子 / 新商品</p><div class="chips"><span class="chip">パン</span><span class="chip">焼き菓子</span></div></div></button>
+    <button class="storeCard" data-category="service" data-k="nodelab" data-store="nodelab"><div class="thumb"></div><div><h4>NODE LAB.</h4><p>スマホ・PC修理 / デジタルサポート</p><div class="chips"><span class="chip">修理</span><span class="chip">PC</span></div></div></button>
+    <button class="storeCard" data-category="food" data-k="iseya" data-store="iseya"><div class="thumb"></div><div><h4>雲遊菓庵 伊勢屋</h4><p>季節の和菓子・贈答・予約</p><div class="chips"><span class="chip">和菓子</span><span class="chip">季節商品</span></div></div></button>
+    <button class="storeCard" data-category="shopping" data-k="seika" data-store="seika"><div class="thumb"></div><div><h4>八百俊青果店</h4><p>青果・果物 / 本日のおすすめ</p><div class="chips"><span class="chip">青果</span><span class="chip">入荷情報</span></div></div></button>
+    <button class="storeCard" data-category="food" data-k="bakery" data-store="bakery"><div class="thumb"></div><div><h4>時風ベーカリー</h4><p>パン・焼き菓子 / 新商品</p><div class="chips"><span class="chip">パン</span><span class="chip">焼き菓子</span></div></div></button>
   </div>
 </section>
 
 <section class="page" data-page="news">
   <div class="hello"><div><small>NEWS & UPDATE</small><h1>最新情報</h1></div></div>
-  <article class="notice"><div class="noticeTop"><span class="tag">商店街から</span><span class="time">今日 10:30</span></div><h4>今週末は朝市を開催します</h4><p>9月27日 7:00–9:00。各店舗のおすすめ商品をお楽しみください。</p></article>
-  <article class="notice"><div class="noticeTop"><span class="tag">雲遊菓庵 伊勢屋</span><span class="time">今日 9:10</span></div><h4>秋限定の和菓子を販売します</h4><p>数量限定の季節商品を今週末から販売します。</p></article>
-  <article class="notice"><div class="noticeTop"><span class="tag">八百俊青果店</span><span class="time">昨日 17:20</span></div><h4>旬の秋野菜が入荷しました</h4><p>本日のおすすめ商品を店舗から直接更新しています。</p></article>
-  <article class="notice"><div class="noticeTop"><span class="tag">NODE LAB.</span><span class="time">昨日 12:00</span></div><h4>スマホ・PCのお困りごと相談</h4><p>修理や設定、データ移行などの相談を受け付けています。</p></article>
+  <article class="notice"><div class="noticeTop"><span class="tag">掲載例</span><span class="time">DEMO</span></div><h4>朝市などの催しを確認できます</h4><p>開催日・時間は商店街の公式発表をご確認ください。これは通知表示のデモです。</p></article>
+  <article class="notice"><div class="noticeTop"><span class="tag">雲遊菓庵 伊勢屋</span><span class="time">DEMO</span></div><h4>秋限定の和菓子を販売します</h4><p>数量限定の季節商品を今週末から販売します。</p></article>
+  <article class="notice"><div class="noticeTop"><span class="tag">八百俊青果店</span><span class="time">DEMO</span></div><h4>旬の秋野菜が入荷しました</h4><p>本日のおすすめ商品を店舗から直接更新しています。</p></article>
+  <article class="notice"><div class="noticeTop"><span class="tag">NODE LAB.</span><span class="time">DEMO</span></div><h4>スマホ・PCのお困りごと相談</h4><p>修理や設定、データ移行などの相談を受け付けています。</p></article>
 </section>
 
 <section class="page" data-page="my">
   <div class="hello"><div><small>MY AOI</small><h1>マイページ</h1></div></div>
-  <div class="profile"><div class="avatar">青</div><h3>青井アプリ デモユーザー</h3><p>お気に入りのお店と商店街のお知らせをまとめて確認。</p><div class="profileStats"><div><b>3</b><small>お気に入り</small></div><div><b>2</b><small>クーポン</small></div><div><b>4</b><small>通知</small></div></div></div>
+  <div class="profile"><div class="avatar">青</div><h3>青井アプリ デモユーザー</h3><p>お気に入りのお店と商店街のお知らせをまとめて確認。</p><div class="profileStats"><div><b>0</b><small>お気に入り</small></div><div><b>0</b><small>デモ券</small></div><div><b>OFF</b><small>通知設定</small></div></div></div>
   <div class="menuCard">
-    <button class="menuItem"><span>♡ お気に入り店舗</span><small>3件 ›</small></button>
-    <button class="menuItem"><span>🎟️ 保存したクーポン</span><small>2件 ›</small></button>
-    <button class="menuItem"><span>🔔 通知設定</span><small>›</small></button>
+    <button class="menuItem" id="myFavorites"><span>♡ お気に入り店舗</span><small>0件 ›</small></button>
+    <button class="menuItem" id="myCoupons"><span>🎟️ 保存したデモ券</span><small>0件 ›</small></button>
+    <button class="menuItem" id="mySettings"><span>🔔 通知設定</span><small>OFF ›</small></button>
     <button class="menuItem" id="webDemo"><span>🌐 Web版デモを見る</span><small>↗</small></button>
   </div>
 </section>
 
 
+<section class="page" data-page="coupons"><div class="demoPage"><span class="pill">DEMO BENEFITS</span><h1>クーポンの体験</h1><p>実際の加盟店割引ではありません。デザイン・保存・解除の動作を体験できます。</p><div class="demoCoupon"><span class="pill">サンプル / 利用不可</span><h3>🌹 バラ散歩 ありがとう券</h3><p>ROSE WALKと商店街の回遊をつなぐデモ特典です。</p><button data-demo-coupon="rose">デモ券を保存</button></div><div class="demoCoupon"><span class="pill">サンプル / 利用不可</span><h3>🏪 商店街の発見応援券</h3><p>新しい店を知るきっかけを作るデモ特典です。</p><button data-demo-coupon="discovery">デモ券を保存</button></div><div class="demoNote">※ 実店舗で提示しても割引・サービスは受けられません。店舗の承認、割引条件、運営主体が決まった後に正式実装します。</div><button class="smallDemoBtn" data-go="home">ホームへ戻る</button></div></section>
+<section class="page" data-page="saved"><div class="demoPage"><span class="pill">MY FAVORITES</span><h1>お気に入り店舗</h1><p>店舗詳細の「♡」を押すと、ここに追加されます。データはこの端末のブラウザ内だけに保存されます。</p><div id="savedList"></div><p id="savedEmpty">保存した店舗はありません。店舗検索からお気に入りを追加してください。</p><button class="smallDemoBtn" data-go="stores">お店を探す →</button></div></section>
+<section class="page" data-page="settings"><div class="demoPage"><span class="pill">SETTINGS / DEMO</span><h1>通知設定</h1><p>通知設定の画面イメージです。実際のプッシュ通知・メール・外部送信は行いません。</p><label class="demoSettings"><span>商店街のお知らせ <small id="demoNotifyStatus">OFF</small></span><input id="demoNotifyToggle" type="checkbox"></label><button id="demoReset" class="smallDemoBtn">保存内容をリセット</button></div></section>
+<section class="page" data-page="eventsPage"><div class="demoPage"><span class="pill">AOI EVENT GUIDE</span><h1>イベント・地域企画</h1><p>既存イベントと、未決定の活性化企画を分けています。日程は必ず公式発表で確認してください。</p><article class="event"><div class="date">既存</div><div><b>商店街 朝市</b><p>原則毎月第4日曜日。実際の開催予定は公式案内をご確認ください。</p></div></article><article class="event"><div class="date">既存</div><div><b>青井の夜会・まんぞく市等</b><p>商店街が開催する既存催し。日程・内容は公式案内を参照。</p></div></article><article class="event rose"><div class="date">構想</div><div><b>🌹 AOI ROSE WALK</b><p>青和ばら公園から商店街への回遊企画。未開催。</p><button class="smallDemoBtn" data-go="rose">体験を見る</button></div></article><article class="event"><div class="date">構想</div><div><b>🏈 AOI FLAG FOOTBALL DAY</b><p>青井中学校・電通キャタピラーズ等との連携は正式協議前の構想です。</p></div></article><div class="demoNote">学校利用・スポーツチーム出演・出店・景品等は確定していません。</div><a href="https://aoiheiwa.com/" target="_blank" rel="noopener">商店街公式サイトでイベント確認 ↗</a></div></section>
 <section class="page" data-page="rose">
   <div class="roseAppBody">
     <span class="ey">AOI ROSE WALK / PROPOSAL DEMO</span>
@@ -222,6 +240,7 @@ document.getElementById('modalOfficial').onclick=()=>window.open(stores[currentS
 document.getElementById('modalFav').onclick=()=>showToast(stores[currentStore].name+' をお気に入りに追加（デモ）');
 document.getElementById('shopSearch').addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('.storeCard').forEach(c=>c.style.display=c.textContent.toLowerCase().includes(q)?'grid':'none')});
 </script>
+<script defer src="./app-enhance-v12.js"></script>
 <script id="roseapp-stamp-demo">
 (function(){var flags={};var buttons=[].slice.call(document.querySelectorAll('[data-roseapp-stamp]'));var out=document.getElementById('roseAppProgress');buttons.forEach(function(b){b.addEventListener('click',function(){var k=b.getAttribute('data-roseapp-stamp');flags[k]=!flags[k];b.classList.toggle('on',flags[k]);b.setAttribute('aria-pressed',String(Boolean(flags[k])));var c=Object.values(flags).filter(Boolean).length;out.textContent=c===3?'🌹 スタンプ 3 / 3 達成（デモ専用・特典なし）':'🌹 スタンプ '+c+' / 3';});});})();
 </script>
