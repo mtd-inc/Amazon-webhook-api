@@ -88,6 +88,23 @@ main{max-width:1100px;margin:auto;padding:14px 12px 88px}
 .event:nth-child(2) .date{background:var(--rose-soft)!important;color:var(--rose-deep)!important}
 .demo{border:1px solid rgba(217,123,146,.18)}
 </style>
+
+<style id="aoi-next-demo-style">
+.nextInvite{margin:24px 0;padding:23px 22px;background:linear-gradient(145deg,#eaf5ef,#fffdf9);border:1px solid #d4e6dc;border-radius:22px}
+.nextEy{font-size:10px;letter-spacing:.13em;font-weight:900;color:#0f5b49}
+.nextInvite h2{font-size:clamp(24px,4vw,33px);letter-spacing:-.03em;line-height:1.24;margin:9px 0 10px;color:#17382f}
+.nextInvite p{color:#53635c;font-size:12px;line-height:1.9;margin:0}
+.nextRoad{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:17px 0}
+.nextRoad div{background:#fff;border:1px solid #dae6e0;border-radius:15px;padding:14px 12px;color:#17382f}
+.nextRoad b{font-size:11px;display:block}.nextRoad small{display:block;color:#687c70;margin-top:5px;font-size:9px;line-height:1.55}
+.nextLinks{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.nextLinks a{font-size:11px;padding:11px 15px;border-radius:999px;border:1px solid #c8d7cd;color:#0f5b49;background:#fff;text-decoration:none;font-weight:900}
+.nextLinks a.nextMain{background:#0f5b49;color:white;border-color:#0f5b49}
+.nextDisclaimer{font-size:9px!important;color:#8c7b75!important;margin-top:13px!important}
+.nextHeroLink{display:block;margin-top:8px;text-align:center;text-decoration:none;background:#e8f5ed;color:#0f5b49;border:1px solid #c8e1d3;border-radius:13px;padding:11px 10px;font-size:12px;font-weight:900}
+@media(max-width:650px){.nextRoad{grid-template-columns:1fr 1fr}.nextInvite{padding:19px 15px}}
+@media(max-width:390px){.nextRoad{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <header><div class="brand"><div class="logo">青</div><div><b>青井兵和通り商店街</b><small>スマホ優先 DXデモ</small></div></div><span class="demo">DEMO</span></header>
@@ -99,6 +116,7 @@ main{max-width:1100px;margin:auto;padding:14px 12px 88px}
   <div class="cta"><button class="primary" id="findShop">店舗を探す</button><button class="secondary" id="todayNews">今日のお知らせ</button></div><a href="./app.html" style="display:block;margin-top:8px;text-align:center;text-decoration:none;background:#fff0f3;color:#c95a75;border:1px solid #f2d3dc;border-radius:13px;padding:11px 10px;font-size:12px;font-weight:900">📱 アプリ版デモを開く</a>
 </section>
 
+<div style="padding:0 13px 8px"><a class="nextHeroLink" href="#challenge">🌱 新しいお店を育てる構想を見る ↗</a></div>
 <section class="streetWrap" id="street">
   <div class="streetMeta"><div><small>写真の中のお店をタップ</small><br><b>青井兵和通りを歩くように探す</b></div><small>↓</small></div>
   <div class="street">
@@ -127,6 +145,24 @@ main{max-width:1100px;margin:auto;padding:14px 12px 88px}
   </div>
 </section>
 
+
+<section class="nextInvite" id="challenge" aria-label="新しいお店が生まれる商店街">
+  <div class="nextEy">AOI CHALLENGE / 出店を育てる構想</div>
+  <h2>新しい店と出会える街。<br>新しい店を始められる街。</h2>
+  <p>季節イベントを「次のお店を見つける入口」に。1日出店から小さく試し、常設店舗まで育てる仕組みを構想しています。既存店の日常営業を大切にしながら、街に新しい魅力を増やします。</p>
+  <div class="nextRoad">
+    <div><b>01 1日出店</b><small>季節イベントで地域と出会う</small></div>
+    <div><b>02 短期チャレンジ</b><small>売上や地域との相性を検証</small></div>
+    <div><b>03 空き店舗と接続</b><small>条件の合う物件を紹介</small></div>
+    <div><b>04 常設出店へ</b><small>販促・DXで定着を支援</small></div>
+  </div>
+  <div class="nextLinks">
+    <a class="nextMain" href="./app.html">📱 アプリ体験を見る ↗</a>
+    <a href="https://aoiheiwa.com/shopkeeper" target="_blank" rel="noopener">既存イベントへの出店問合せ（公式） ↗</a>
+  </div>
+  <p class="nextDisclaimer">※ 本セクションは商店街活性化の提案デモです。常設出店募集・空き店舗仲介・チャレンジ制度の開始を告知するものではありません。</p>
+</section>
+
 <section class="section" id="news">
   <div class="sectionHead"><h2>今日のお知らせ</h2><small>店舗更新がここにも反映</small></div>
   <div class="news">
@@ -137,9 +173,9 @@ main{max-width:1100px;margin:auto;padding:14px 12px 88px}
 </section>
 
 <section class="section" id="events">
-  <div class="sectionHead"><h2>今週のイベント</h2><small>商店街全体のお知らせ</small></div>
+  <div class="sectionHead"><h2>商店街の催し</h2><small>日程は公式サイトで確認</small></div>
   <div class="events">
-    <article class="event"><div class="date">9/27<br>日</div><div><h3>朝市</h3><p>7:00–9:00 / 毎月第4日曜日に開催</p></div></article>
+    <article class="event"><div class="date">毎月<br>第4日</div><div><h3>朝市</h3><p>毎月第4日曜日 7:00–9:00 / 開催状況は公式情報をご確認ください</p></div></article>
     <article class="event"><div class="date">ROSE<br>WEEK</div><div><h3>バラの町フォトスポット巡り</h3><p>商店街の花壇や店先のバラを楽しみながら、店舗を回遊する企画イメージです。</p></div></article>
   </div>
 </section>
