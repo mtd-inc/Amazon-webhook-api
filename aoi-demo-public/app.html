@@ -72,7 +72,7 @@ button,input{font:inherit}button{cursor:pointer}.app{width:100%;max-width:480px;
 .demoPage .event{margin-top:12px}.demoPage a{font-weight:800;font-size:11px;color:var(--g)}
 .demoPage input[type=checkbox]{width:21px;height:21px;accent-color:var(--g)}
 .demoSettings{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);background:#fff;border-radius:16px;padding:16px;margin:16px 0}
-</style></head>
+</style><style id="shared-feed-app-style">.sharedFeedApp{margin:16px 0 2px}.sharedFeedApp .shopUpdatesRail{display:flex;gap:10px;overflow-x:auto;padding:2px 1px 11px;scroll-snap-type:x mandatory}.sharedFeedApp .shopUpdateCard{flex:0 0 78%;max-width:280px;background:#fff;border:1px solid #e7e0d7;display:flex;align-items:center;border-radius:16px;overflow:hidden;text-align:left;text-decoration:none;color:#17382f;scroll-snap-align:start}.sharedFeedApp .shopUpdateImage{width:76px;height:95px;object-fit:cover}.sharedFeedApp .shopUpdateBody{padding:10px;display:flex;flex-direction:column;gap:4px}.sharedFeedApp .shopUpdateTag{font-size:9px;color:#b65370;font-weight:900}.sharedFeedApp .shopUpdateTitle{font-size:13px;font-weight:900}.sharedFeedApp .shopUpdateStore{font-size:10px;color:#65756d}.sharedFeedApp .shopFeedEmpty{font-size:11px;color:#65756d}</style></head>
 <body>
 <div class="app">
 <header class="top">
@@ -94,8 +94,8 @@ button,input{font:inherit}button{cursor:pointer}.app{width:100%;max-width:480px;
   </div>
 
   <div class="section">
-    <div class="sectionHead"><h3>今日のお知らせ</h3><button data-go="news">すべて見る</button></div>
-    <div class="story">
+    <div class="sectionHead"><h3>お店の新着情報</h3><button data-go="news">すべて見る</button></div><div class="sharedFeedApp"><div class="shopUpdatesRail" data-shop-updates-feed="app"><p class="shopFeedEmpty">読み込み中…</p></div></div>
+    <div class="story" style="display:none" aria-hidden="true">
       <article class="storyCard"><div class="storyPic"></div><div class="storyBody"><span class="pill">NEW</span><h4>秋の商店街おすすめ特集</h4><p>各店舗の今週のおすすめをアプリからチェックできます。</p></div></article>
       <article class="storyCard"><div class="storyPic"></div><div class="storyBody"><span class="pill">伊勢屋</span><h4>秋の和菓子が登場</h4><p>季節限定商品の案内を店舗から直接更新するデモです。</p></div></article>
       <article class="storyCard"><div class="storyPic"></div><div class="storyBody"><span class="pill">八百俊青果店</span><h4>本日のおすすめ野菜</h4><p>旬の商品や入荷情報をその日のうちに発信できます。</p></div></article>
@@ -240,7 +240,7 @@ document.getElementById('modalOfficial').onclick=()=>window.open(stores[currentS
 document.getElementById('modalFav').onclick=()=>showToast(stores[currentStore].name+' をお気に入りに追加（デモ）');
 document.getElementById('shopSearch').addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('.storeCard').forEach(c=>c.style.display=c.textContent.toLowerCase().includes(q)?'grid':'none')});
 </script>
-<script defer src="./app-enhance-v12.js"></script>
+<script defer src="./app-enhance-v12.js"></script><script defer src="./shop-updates-v1.js"></script>
 <script id="roseapp-stamp-demo">
 (function(){var flags={};var buttons=[].slice.call(document.querySelectorAll('[data-roseapp-stamp]'));var out=document.getElementById('roseAppProgress');buttons.forEach(function(b){b.addEventListener('click',function(){var k=b.getAttribute('data-roseapp-stamp');flags[k]=!flags[k];b.classList.toggle('on',flags[k]);b.setAttribute('aria-pressed',String(Boolean(flags[k])));var c=Object.values(flags).filter(Boolean).length;out.textContent=c===3?'🌹 スタンプ 3 / 3 達成（デモ専用・特典なし）':'🌹 スタンプ '+c+' / 3';});});})();
 </script>
