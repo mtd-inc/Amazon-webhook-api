@@ -11,7 +11,7 @@ export const hash=v=>crypto.createHash("sha256").update(v,"utf8").digest("hex");
 export function assertApproval(input,now=Date.now()){
   if(input?.candidateId!==TARGET.candidateId||input.sku!==TARGET.sku||input.asin!==TARGET.asin||input.field!==TARGET.field) throw Error("TARGET_DRIFT");
   if(input.currentHash!==TARGET.currentHash||input.proposedHash!==TARGET.proposedHash||hash(TARGET.current)!==TARGET.currentHash||hash(TARGET.proposed)!==TARGET.proposedHash) throw Error("HASH_DRIFT");
-  if(!input.approvalId||!input.approvalProof||!input.approvedAt||!input.expiresAt) throw Error("APPROVAL_PROOF_REQUIRED");
+  if(!input.approvalId||!input.liveApprovalId||!input.approvalProof||!input.approvedAt||!input.expiresAt) throw Error("APPROVAL_PROOF_REQUIRED");
   const start=Date.parse(input.approvedAt),end=Date.parse(input.expiresAt);
   if(!Number.isFinite(start)||!Number.isFinite(end)||start>now||end-now<30000||end-start>910000) throw Error("APPROVAL_EXPIRED");
 }

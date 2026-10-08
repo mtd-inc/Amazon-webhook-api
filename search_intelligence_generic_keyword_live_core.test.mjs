@@ -2,7 +2,7 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {TARGET,hash,buildPatch,assertApproval,executeLive} from "./search_intelligence_generic_keyword_live_core.mjs";
 const listing={summaries:[{asin:TARGET.asin,productType:"NOTEBOOK_COMPUTER"}],attributes:{generic_keyword:[{value:TARGET.current,language_tag:"ja_JP",marketplace_id:"A1VC38T7YXB528"}]}};
-const input={candidateId:TARGET.candidateId,sku:TARGET.sku,asin:TARGET.asin,field:TARGET.field,currentHash:TARGET.currentHash,proposedHash:TARGET.proposedHash,approvedAt:"2026-10-08T07:00:00Z",expiresAt:"2026-10-08T07:15:00Z",approvalId:"test",approvalProof:"signed"};
+const input={candidateId:TARGET.candidateId,sku:TARGET.sku,asin:TARGET.asin,field:TARGET.field,currentHash:TARGET.currentHash,proposedHash:TARGET.proposedHash,approvedAt:"2026-10-08T07:00:00Z",expiresAt:"2026-10-08T07:15:00Z",approvalId:"test",liveApprovalId:"live-test",approvalProof:"signed"};
 test("scope: exactly one generic_keyword patch",()=>{const p=buildPatch(listing);assert.equal(p.path,"/attributes/generic_keyword");assert.equal(p.value[0].value,TARGET.proposed)});
 test("hashes exact",()=>{assert.equal(hash(TARGET.current),TARGET.currentHash);assert.equal(hash(TARGET.proposed),TARGET.proposedHash)});
 test("source drift blocked",()=>assert.throws(()=>buildPatch({...listing,attributes:{generic_keyword:[{value:"wrong"}]}}),/SOURCE_DRIFT/));

@@ -60,7 +60,7 @@ async function spApiRequest(accessToken,sku,productType,patches,mode) {
   return {httpStatus:response.status,status:data.status||"",submissionId:data.submissionId||"",issueCount:issues.length,errorCount,valid:response.ok&&errorCount===0&&issues.length===0&&["VALID","ACCEPTED"].includes(String(data.status||"").toUpperCase())};
 }
 function gateBody(operation,input){
-  return {operation,candidateId:input.candidateId,approvalId:input.approvalId,sellerSku:input.sku,asin:input.asin,targetField:input.field,currentValueHash:input.currentHash,proposedValueHash:input.proposedHash};
+  return {operation,candidateId:input.candidateId,approvalId:input.approvalId,liveApprovalId:input.liveApprovalId,sellerSku:input.sku,asin:input.asin,targetField:input.field,currentValueHash:input.currentHash,proposedValueHash:input.proposedHash};
 }
 async function gate(operation,input) {
   const cfg=config();
