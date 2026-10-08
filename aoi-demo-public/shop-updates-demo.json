@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "label": "提案デモ用の掲載例です。実際の販売・セール告知ではありません。",
+  "posts": [
+    {
+      "id": "demo-iseya-new",
+      "storeId": "iseya",
+      "type": "new",
+      "title": "季節のお菓子",
+      "summary": "新商品のお知らせ例です。実際の販売情報は店舗にご確認ください。",
+      "demo": true
+    },
+    {
+      "id": "demo-seika-sale",
+      "storeId": "seika",
+      "type": "sale",
+      "title": "お買い得情報",
+      "summary": "セール告知の表示例です。実際の割引は実施していません。",
+      "demo": true
+    },
+    {
+      "id": "demo-bakery-new",
+      "storeId": "bakery",
+      "type": "new",
+      "title": "焼きたてパンの話題",
+      "summary": "商品の紹介を想定した掲載例です。販売状況は店舗にご確認ください。",
+      "demo": true
+    },
+    {
+      "id": "demo-nodelab-news",
+      "storeId": "nodelab",
+      "type": "news",
+      "title": "スマホ・PCの相談",
+      "summary": "店舗からの最新情報を発信する画面例です。",
+      "demo": true
+    }
+  ]
+}
