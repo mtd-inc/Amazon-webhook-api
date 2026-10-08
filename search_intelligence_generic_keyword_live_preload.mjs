@@ -6,6 +6,7 @@ import { TARGET, executeLive } from "./search_intelligence_generic_keyword_live_
 const ROUTE="/amazon/listing/search-intelligence-generic-keyword-live";
 const originalListen=express.application.listen;
 let processAttempted=false;
+let processInFlight=false;
 const MARKETPLACE_ID="A1VC38T7YXB528";
 const REQUEST_TIMEOUT_MS=20000;
 function secretEqual(a,b) {
@@ -68,7 +69,7 @@ async function gate(operation,input) {
     method:"POST",headers:{"content-type":"application/json","x-mtd-internal-control-plane-secret":cfg.controlSecret},
     body:JSON.stringify(gateBody(operation,input))
   });
-  if(!response.ok||data.ok!==true||data.operation!==operation||data.approvalId!==input.approvalId)throw Error("CONTROL_PLANE_"+operation+"_BLOCKED");
+  if(!response.ok||data.ok!==true||data.operation!==operation||data.approvalId!==input.approvalId||data.liveApprovalId!==input.liveApprovalId||(operation==="RESERVE"&&data.reserved!==true))throw Error("CONTROL_PLANE_"+operation+"_BLOCKED");
   return true;
 }
 async function handler(req,res){
@@ -76,7 +77,8 @@ async function handler(req,res){
   try {
     if(process.env.SI_GENERIC_KEYWORD_LIVE_ENABLED!=="true")return res.status(503).json({ok:false,reason:"FEATURE_DISABLED",livePatchSent:false});
     if(!secretEqual(req.headers["x-si-live-secret"],process.env.SI_GENERIC_KEYWORD_LIVE_SECRET))return res.status(401).json({ok:false,error:"UNAUTHORIZED",livePatchSent:false});
-    if(processAttempted)return res.status(409).json({ok:false,error:"PROCESS_LIVE_ATTEMPT_ALREADY_USED",livePatchSent:false});
+    if(processAttempted||processInFlight)return res.status(409).json({ok:false,error:"PROCESS_LIVE_ATTEMPT_ALREADY_USED_OR_IN_FLIGHT",livePatchSent:false});
+    processInFlight=true;
     const input=req.body||{};
     const access=await token();
     const result=await executeLive({input,verifyProof:async body=>gate("VERIFY",body),reserve:async()=>gate("RESERVE",input),
@@ -93,6 +95,8 @@ async function handler(req,res){
   } catch(e){
     if(attempted)processAttempted=true;
     return res.status(409).json({ok:false,livePatchSent:attempted,livePatchAttempts:attempted?1:0,error:e instanceof Error?e.message:String(e),doNotRetry:attempted});
+  } finally {
+    processInFlight=false;
   }
 }
 express.application.listen=function(...args){

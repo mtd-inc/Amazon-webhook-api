@@ -13,3 +13,32 @@ test("one attempt on valid preview",async()=>{let calls=0;const r=await executeL
 test("validation fails closed",async()=>{let calls=0;await assert.rejects(()=>executeLive({input,now:()=>Date.parse("2026-10-08T07:05:00Z"),verifyProof:async()=>true,reserve:async()=>true,read:async()=>listing,preview:async()=>({valid:false}),live:async()=>{calls++}}),/PREVIEW_FAILED/);assert.equal(calls,0)});
 test("duplicate reservation fails closed",async()=>{let calls=0;await assert.rejects(()=>executeLive({input,now:()=>Date.parse("2026-10-08T07:05:00Z"),verifyProof:async()=>true,reserve:async()=>false,read:async()=>listing,preview:async()=>({valid:true,errorCount:0,issueCount:0}),live:async()=>{calls++}}),/ALREADY_RESERVED/);assert.equal(calls,0)});
 test("invalid approval blocks before preview",async()=>{let calls=0;await assert.rejects(()=>executeLive({input,now:()=>Date.parse("2026-10-08T07:05:00Z"),verifyProof:async()=>false,reserve:async()=>true,read:async()=>{calls++},preview:async()=>({})}),/APPROVAL_INVALID/);assert.equal(calls,0)});
+
+test("network timeout after reservation does not retry LIVE",async()=>{
+  let reservations=0, sends=0;
+  await assert.rejects(()=>executeLive({
+    input,now:()=>Date.parse("2026-10-08T07:05:00Z"),
+    verifyProof:async()=>true,
+    reserve:async()=>{reservations++;return true;},
+    read:async()=>listing,
+    preview:async()=>({valid:true,errorCount:0,issueCount:0}),
+    live:async()=>{sends++;throw Error("SOCKET_TIMEOUT");}
+  }),/SOCKET_TIMEOUT/);
+  assert.equal(reservations,1);
+  assert.equal(sends,1);
+});
+test("second attempt is rejected by persistent reservation even after new run",async()=>{
+  const held=new Set();
+  let sends=0;
+  const deps={
+    input,now:()=>Date.parse("2026-10-08T07:05:00Z"),
+    verifyProof:async()=>true,
+    reserve:async()=>{if(held.has("target"))return false;held.add("target");return true;},
+    read:async()=>listing,
+    preview:async()=>({valid:true,errorCount:0,issueCount:0}),
+    live:async()=>{sends++;return {status:"ACCEPTED"};}
+  };
+  await executeLive(deps);
+  await assert.rejects(()=>executeLive(deps),/ALREADY_RESERVED/);
+  assert.equal(sends,1);
+});
