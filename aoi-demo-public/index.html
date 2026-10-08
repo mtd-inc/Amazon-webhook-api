@@ -105,6 +105,26 @@ main{max-width:1100px;margin:auto;padding:14px 12px 88px}
 @media(max-width:650px){.nextRoad{grid-template-columns:1fr 1fr}.nextInvite{padding:19px 15px}}
 @media(max-width:390px){.nextRoad{grid-template-columns:1fr}}
 </style>
+
+<style id="rose-walk-v1-styles">
+.roseFeature{margin:24px 0 8px;padding:24px;background:linear-gradient(135deg,#fff0f2,#fffaf5 60%,#e9f6f1);border:1px solid #efd9dc;border-radius:24px;color:#17382f;box-shadow:0 8px 22px rgba(30,60,40,.035)}
+.roseFeature .roseEy{font-size:10px;letter-spacing:.11em;font-weight:900;color:#b75a72}
+.roseFeature .roseHead{display:flex;align-items:start;justify-content:space-between;gap:12px}
+.roseFeature h2{font-size:clamp(24px,4vw,34px);line-height:1.2;margin:10px 0;color:#17382f}
+.roseFeature p{color:#66736d;font-size:12px;line-height:1.85;margin:0 0 10px}
+.roseFeature .roseBloom{font-size:54px;flex-shrink:0;line-height:1.2}
+.roseFeature .roseRally{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:18px 0}
+.roseFeature .roseStep{background:#fff;border:1px solid #eadfe1;border-radius:17px;padding:14px;text-align:left;min-height:134px;color:#17382f;cursor:pointer;transition:background .2s}
+.roseFeature .roseStep.on{background:#dff4e7;border-color:#4f9d78}
+.roseFeature .roseStep .roseStepTop{display:block;font-size:12px;color:#b75a72;font-weight:900}
+.roseFeature .roseStep strong{display:block;font-size:14px;margin:7px 0}
+.roseFeature .roseStep small{display:block;color:#66736d;font-size:10px;line-height:1.5}
+.roseFeature .roseStatus{font-size:11px;padding:10px 12px;border-radius:12px;background:#fff;border:1px solid #eadfe1}
+.roseFeature .roseLinks{margin-top:14px;display:flex;flex-wrap:wrap;gap:9px}
+.roseFeature .roseLinks a{font-size:11px;color:#0f5b49;text-decoration:underline;text-underline-offset:3px}
+.roseFeature .roseCaution{font-size:10px;color:#996e70;margin-top:11px}
+@media(max-width:620px){.roseFeature{padding:17px}.roseFeature .roseRally{grid-template-columns:1fr}.roseFeature .roseStep{min-height:85px}.roseFeature .roseBloom{font-size:38px}}
+</style>
 </head>
 <body>
 <header><div class="brand"><div class="logo">青</div><div><b>青井兵和通り商店街</b><small>スマホ優先 DXデモ</small></div></div><span class="demo">DEMO</span></header>
@@ -172,11 +192,25 @@ main{max-width:1100px;margin:auto;padding:14px 12px 88px}
   </div>
 </section>
 
+
+<section class="roseFeature" id="roseWalk" aria-label="AOI ROSE WALK 提案デモ">
+  <div class="roseHead"><div><div class="roseEy">AOI ROSE WALK / バラのまち × 商店街</div><h2>バラを見に来たら、<br>青井のお店にも寄ってみよう。</h2></div><div class="roseBloom" aria-hidden="true">🌹</div></div>
+  <p>青和ばら公園には約100種880株のバラ。例年、春は5月上旬〜下旬、秋は10月上旬〜下旬が見頃です。地域には既存の「青井バラまつり」があるため、新しいお祭りを重ねず、商店街への回遊企画として連携する構想です。</p>
+  <div class="roseRally" id="roseRally">
+    <button type="button" class="roseStep" data-rose-stamp="0" aria-pressed="false"><span class="roseStepTop">01 / 公園</span><strong>🌹 青和ばら公園</strong><small>バラを鑑賞するスポット（実在）</small></button>
+    <button type="button" class="roseStep" data-rose-stamp="1" aria-pressed="false"><span class="roseStepTop">02 / 街歩き</span><strong>📷 青井のまちを散歩</strong><small>駅周辺から商店街へ（構想ルート）</small></button>
+    <button type="button" class="roseStep" data-rose-stamp="2" aria-pressed="false"><span class="roseStepTop">03 / お店</span><strong>🏪 兵和通りのお店</strong><small>飲食・買物・チャレンジ出店と接続</small></button>
+  </div>
+  <div id="roseStampStatus" class="roseStatus" role="status" aria-live="polite">🌹 デジタル回遊スタンプの体験デモ：0 / 3（スポットを押して試せます）</div>
+  <div class="roseLinks"><a href="https://www.city.adachi.tokyo.jp/k-iji/shisetsu/koen/012.html" target="_blank" rel="noopener">青和ばら公園（足立区公式） ↗</a><a href="./app.html">アプリ版でバラ散歩を体験 ↗</a></div>
+  <p class="roseCaution">※ このスタンプラリー、限定商品、出店連携は未開催の提案です。実在の青井バラまつり・公園との主催協力や許可は今後の協議事項です。景品やクーポンは付与されません。</p>
+</section>
+
 <section class="section" id="events">
   <div class="sectionHead"><h2>商店街の催し</h2><small>日程は公式サイトで確認</small></div>
   <div class="events">
     <article class="event"><div class="date">毎月<br>第4日</div><div><h3>朝市</h3><p>毎月第4日曜日 7:00–9:00 / 開催状況は公式情報をご確認ください</p></div></article>
-    <article class="event"><div class="date">ROSE<br>WEEK</div><div><h3>バラの町フォトスポット巡り</h3><p>商店街の花壇や店先のバラを楽しみながら、店舗を回遊する企画イメージです。</p></div></article>
+    <article class="event"><div class="date">🌹<br>春秋</div><div><h3>AOI ROSE WALK（構想）</h3><p>既存の青井バラまつりと連携を検討。青和ばら公園から商店街へ回遊する提案です。<a href="#roseWalk">体験を見る ↗</a></p></div></article>
   </div>
 </section>
 
@@ -231,6 +265,9 @@ el('publishDraft').onclick=()=>{
  el('aiPreview').classList.remove('show');el('publishDraft').disabled=true;toast('確認済みとして公開しました（デモ）');el('panel').scrollIntoView({behavior:'smooth',block:'start'});draft=null;
 };
 renderStore('nodelab',false);
+</script>
+<script id="rose-stamp-demo">
+(function(){var selected={};var items=[].slice.call(document.querySelectorAll('[data-rose-stamp]'));var out=document.getElementById('roseStampStatus');items.forEach(function(b){b.addEventListener('click',function(){var k=b.getAttribute('data-rose-stamp');selected[k]=!selected[k];b.classList.toggle('on',selected[k]);b.setAttribute('aria-pressed',String(Boolean(selected[k])));var c=Object.values(selected).filter(Boolean).length;out.textContent=c===3?'🌹 3 / 3 スタンプ達成！（提案用デモ：景品・クーポンはありません）':'🌹 デジタル回遊スタンプの体験デモ：'+c+' / 3（スポットを押して試せます）';});});})();
 </script>
 </body>
 </html>
