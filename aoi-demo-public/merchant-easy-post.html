@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#faf8f4">
+<title>お店のお知らせを作る｜青井兵和通り商店街・やさしい投稿デモ</title>
+<meta name="description" content="商店街の店舗向け、写真を選ぶ・ひと言書く・確認する、3つの手順の練習画面です。">
+<style>
+:root{--ink:#1d382d;--green:#075c44;--paper:#faf8f4;--white:#fff;--line:#d8dfd8;--muted:#53665c;--focus:#f5a722;--error:#ad283c;--soft:#edf5ee;--font:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}
+*{box-sizing:border-box}
+html{font-size:18px;scroll-behavior:smooth}
+body{margin:0;background:var(--paper);font-family:var(--font);color:var(--ink);line-height:1.6}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+a{color:var(--green)}
+.wrap{max-width:610px;margin:auto;padding:0 18px}
+header{background:#fff;border-bottom:1px solid var(--line)}
+.head{min-height:74px;display:flex;align-items:center;gap:13px}
+.mark{width:45px;height:45px;background:var(--green);color:#fff;display:grid;place-items:center;border-radius:14px;font-weight:900;flex-shrink:0;font-size:23px}
+.head strong{font-size:18px;line-height:1.35}
+.head small{display:block;font-size:13px;color:var(--muted)}
+main{padding-top:25px;padding-bottom:58px}
+.intro{display:flex;align-items:center;gap:9px;color:var(--green);font-size:15px;font-weight:800;margin:0 0 19px}
+.dot{background:#e4f4ea;padding:6px 10px;border-radius:999px}
+.warning{border:2px solid #d9b5bd;background:#fff4f4;border-radius:16px;padding:14px 16px;color:#723e48;font-size:15px;line-height:1.55;margin-bottom:20px}
+.warning strong{font-weight:900}
+.progress{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:800;font-size:15px;margin:0 0 8px}
+progress{display:block;width:100%;height:12px;accent-color:var(--green);border:0;border-radius:999px;overflow:hidden;margin-bottom:27px}
+progress::-webkit-progress-bar{background:#e5ece5;border-radius:999px}
+progress::-webkit-progress-value{background:var(--green);border-radius:999px}
+.panel{background:var(--white);border:1px solid var(--line);border-radius:23px;padding:clamp(19px,4vw,29px);box-shadow:0 9px 28px rgba(30,58,35,.055)}
+.panel[hidden],section[hidden],div[hidden],p[hidden]{display:none!important}
+h1{font-size:30px;line-height:1.35;margin:0 0 7px;letter-spacing:-.025em}
+.lead{margin:0 0 22px;color:var(--muted);font-size:17px}
+.choiceGrid{display:grid;gap:14px;margin:15px 0}
+.bigButton{width:100%;display:flex;align-items:center;gap:15px;min-height:88px;padding:18px;border-radius:17px;border:2px solid #c6d9cc;background:#f5faf6;color:var(--ink);text-align:left}
+.bigButton .emoji{font-size:31px;line-height:1}
+.bigButton strong{display:block;font-size:21px;line-height:1.2}
+.bigButton small{font-size:14px;display:block;color:var(--muted);margin-top:6px}
+.primary{width:100%;background:var(--green);color:#fff;border:none;border-radius:17px;min-height:63px;padding:15px 18px;font-size:20px;font-weight:900;box-shadow:0 4px 14px rgba(0,80,45,.10)}
+.secondary{width:100%;border:2px solid #a3bdae;background:#fff;color:var(--green);border-radius:17px;min-height:58px;padding:11px 16px;font-weight:850;font-size:18px}
+.subtleButton{color:var(--green);font-weight:850;background:none;border:none;text-decoration:underline;text-underline-offset:4px;padding:12px;font-size:17px;min-height:52px}
+.nav{display:grid;gap:12px;margin-top:25px}
+.miniNote{margin:8px 0 0;color:var(--muted);font-size:14px}
+.fileInput{position:absolute;width:1px;height:1px;clip:rect(0,0,0,0);overflow:hidden;white-space:nowrap;clip-path:inset(50%)}
+button:focus-visible,a:focus-visible,textarea:focus-visible,summary:focus-visible{outline:4px solid var(--focus);outline-offset:3px}
+.previewPhoto{margin:12px 0;border:2px solid var(--line);background:#f5f5f1;border-radius:17px;overflow:hidden;padding:10px;text-align:center}
+.previewPhoto canvas{display:block;max-width:100%;max-height:310px;width:auto;height:auto;margin:auto;border-radius:11px}
+.chosen{font-size:16px;font-weight:800;color:var(--green);margin:10px 0 0}
+details{margin:15px 0;padding:12px 15px;border-radius:15px;background:#f6f7f3;border:1px solid var(--line)}
+details summary{cursor:pointer;font-size:16px;font-weight:850;color:var(--ink);min-height:42px;padding-top:7px}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:13px 0 0}
+.tools button{border:2px solid #bdcdc0;background:#fff;padding:11px 9px;min-height:55px;border-radius:12px;font-size:16px;font-weight:800}
+.editLabel{display:block;font-size:20px;font-weight:900;margin:0 0 10px}
+textarea{width:100%;min-height:145px;padding:15px;border-radius:13px;border:2px solid #91aa9b;font-size:20px;color:var(--ink);background:#fff;line-height:1.65;resize:vertical}
+textarea::placeholder{color:#62766a}
+.hint{font-size:15px;color:var(--muted);line-height:1.65;margin:12px 0 4px}
+.counter{text-align:right;color:var(--muted);font-size:14px;margin:5px 0 18px}
+.example{border-radius:13px;background:#eef4ee;padding:13px 15px;margin:17px 0;font-size:16px}
+.example strong{display:block;font-size:15px}
+.example p{margin:5px 0 0}
+.error{color:var(--error);font-weight:900;font-size:16px;margin:9px 0}
+.proof{border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 5px 20px #152b1810}
+.proof img{width:100%;height:auto;max-height:320px;object-fit:contain;display:block;background:#eee}
+.proofText{padding:16px}
+.proofTag{display:inline-block;font-size:13px;font-weight:800;color:var(--green);background:#e7f3eb;border-radius:999px;padding:5px 10px}
+.proof strong{font-size:21px;display:block;line-height:1.5;margin:12px 0;overflow-wrap:anywhere;white-space:pre-wrap}
+.proof small{display:block;color:var(--muted);font-size:14px}
+.foot{font-size:13px;color:var(--muted);text-align:center;padding-top:22px}
+.complete{background:#eaf5ed;color:var(--green);border-radius:14px;padding:17px;margin:15px 0;text-align:center;font-weight:900;font-size:20px}
+@media(max-width:420px){html{font-size:17px}.wrap{padding:0 13px}.panel{padding:18px}h1{font-size:27px}.bigButton strong{font-size:20px}.primary{font-size:19px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<header><div class="wrap head"><span class="mark" aria-hidden="true">青</span><div><strong>お店のお知らせを作る</strong><small>青井兵和通り商店街・練習画面</small></div></div></header>
+<main class="wrap">
+<p class="intro"><span class="dot">かんたん 3つの手順</span> <span>スマホだけでOK</span></p>
+<div class="warning" role="note"><strong>これは練習用です。</strong> 写真や文章は実際のHP・アプリに公開されません。外部へ送信もしません。</div>
+<div class="progress"><span id="stepText">手順 1 / 3</span><span id="stepNames">写真</span></div>
+<progress id="progress" max="3" value="1" aria-label="投稿までの進み具合"></progress>
+<section class="panel" id="step1">
+<h1 id="heading1" tabindex="-1">写真を選びましょう</h1>
+<p class="lead">写真がなくても、お知らせできます。</p>
+<div class="choiceGrid">
+<button class="bigButton" type="button" id="cameraBtn"><span class="emoji" aria-hidden="true">📷</span><span><strong>写真を撮る</strong><small>今からスマホで撮影します</small></span></button>
+<button class="bigButton" type="button" id="albumBtn"><span class="emoji" aria-hidden="true">🖼️</span><span><strong>写真を選ぶ</strong><small>保存してある写真を使います</small></span></button>
+</div>
+<input class="fileInput" type="file" id="cameraInput" accept="image/*" capture="environment" aria-label="スマホで写真を撮る">
+<input class="fileInput" type="file" id="albumInput" accept="image/*" aria-label="写真を選ぶ">
+<p id="fileError" class="error" role="alert" hidden></p>
+<div id="photoArea" hidden>
+<p class="chosen" id="photoSelected">写真を選びました</p>
+<div class="previewPhoto"><canvas id="photoCanvas" role="img" aria-label="選んだ写真の確認画像"></canvas></div>
+<details><summary>写真の向きを直す（必要な人だけ）</summary>
+<div class="tools"><button id="rotateBtn" type="button">↻ 右に回す</button><button id="resetBtn" type="button">元に戻す</button></div>
+</details>
+</div>
+<div class="nav"><button class="primary" type="button" id="next1">次へ進む　→</button>
+<p class="miniNote">「次へ進む」で写真なしでも進めます。</p></div>
+</section>
+<section class="panel" id="step2" hidden>
+<h1 id="heading2" tabindex="-1">何をお知らせしますか？</h1>
+<p class="lead">ひと言だけでも大丈夫です。</p>
+<label class="editLabel" for="postBody">お知らせの内容</label>
+<textarea id="postBody" maxlength="120" placeholder="例：今日、栗大福ができました。"></textarea>
+<div class="counter"><span id="charCount">0</span> / 120文字</div>
+<p class="hint">スマホのキーボードにある <strong>マイクのボタン</strong> を使えば、話して入力することもできます。</p>
+<div class="example"><strong>こんな短い文章でOK</strong><p>「今日のおすすめはトマトです！」</p></div>
+<p id="bodyError" class="error" role="alert" hidden></p>
+<div class="nav"><button class="primary" type="button" id="next2">確認する　→</button><button class="secondary" type="button" id="back2">← 写真に戻る</button></div>
+</section>
+<section class="panel" id="step3" hidden>
+<h1 id="heading3" tabindex="-1">この内容でよいですか？</h1>
+<p class="lead">お客様にはこのように見えます。</p>
+<div class="proof" aria-label="投稿内容の確認">
+<img id="finalPhoto" alt="選択した投稿写真" hidden>
+<div class="proofText"><span class="proofTag">お店のお知らせ・練習</span><strong id="finalBody"></strong><small>公開イメージ / 練習画面</small></div>
+</div>
+<div class="nav"><button class="primary" type="button" id="completeBtn">この内容で投稿する（練習）</button><button class="secondary" type="button" id="back3">← 文章を直す</button></div>
+<p class="miniNote">実際の投稿や画像の送信は行いません。</p>
+</section>
+<section class="panel" id="complete" hidden>
+<h1 id="heading4" tabindex="-1">操作の練習ができました！</h1>
+<div class="complete" role="status">✓ 3つの手順が終わりました</div>
+<p class="lead">ここまでが練習です。<strong>HP・アプリにはまだ公開されていません。</strong></p>
+<button class="primary" type="button" id="restart">もう一度やってみる</button>
+</section>
+<p class="foot">本番版では、店舗ごとのログイン・途中保存・本部確認・HPとアプリへの公開を追加します。</p>
+</main>
+<script>
+(function(){
+'use strict';
+var step=1, rotation=0, photoURL=null, image=null, file=null;
+var $=function(id){return document.getElementById(id);};
+var canvas=$('photoCanvas'), ctx=canvas.getContext('2d'), body=$('postBody');
+function current(n){
+ step=n;
+ [1,2,3].forEach(function(i){$('step'+i).hidden=i!==n;});
+ $('complete').hidden=n!==4;
+ $('progress').value=Math.min(n,3);
+ $('stepText').textContent=n===4?'練習完了':'手順 '+n+' / 3';
+ $('stepNames').textContent=['','写真','ひと言','確認','完了'][n];
+ window.scrollTo({top:0,behavior:'auto'});
+ var h=$('heading'+(n===4?4:n));if(h)h.focus({preventScroll:true});
+}
+function showError(id,msg){$(id).textContent=msg;$(id).hidden=!msg;}
+function renderPhoto(){
+ if(!image)return;
+ var max=1280,s=Math.min(1,max/Math.max(image.naturalWidth,image.naturalHeight));
+ var w=Math.max(1,Math.round(image.naturalWidth*s)),h=Math.max(1,Math.round(image.naturalHeight*s));
+ var quarter=rotation%2!==0;
+ canvas.width=quarter?h:w;canvas.height=quarter?w:h;
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ ctx.save();
+ ctx.translate(canvas.width/2,canvas.height/2);
+ ctx.rotate(rotation*Math.PI/2);
+ ctx.drawImage(image,-w/2,-h/2,w,h);
+ ctx.restore();
+}
+function useFile(f){
+ if(!f)return;
+ if(!f.type.startsWith('image/')){showError('fileError','写真のファイルを選んでください。');return;}
+ if(f.size>12*1024*1024){showError('fileError','写真が大きすぎます。12MB以下の写真を選んでください。');return;}
+ showError('fileError','');
+ var nextURL=URL.createObjectURL(f),nextImg=new Image();
+ nextImg.onload=function(){
+  if(photoURL)URL.revokeObjectURL(photoURL);
+  photoURL=nextURL;image=nextImg;file=f;rotation=0;
+  $('photoArea').hidden=false;
+  $('photoSelected').textContent='写真を選びました（'+f.name+'）';
+  renderPhoto();
+ };
+ nextImg.onerror=function(){URL.revokeObjectURL(nextURL);showError('fileError','写真を開けませんでした。別の写真をお試しください。');};
+ nextImg.src=nextURL;
+}
+$('cameraBtn').addEventListener('click',function(){$('cameraInput').click();});
+$('albumBtn').addEventListener('click',function(){$('albumInput').click();});
+$('cameraInput').addEventListener('change',function(){useFile(this.files&&this.files[0]);this.value='';});
+$('albumInput').addEventListener('change',function(){useFile(this.files&&this.files[0]);this.value='';});
+$('rotateBtn').addEventListener('click',function(){rotation=(rotation+1)%4;renderPhoto();});
+$('resetBtn').addEventListener('click',function(){rotation=0;renderPhoto();});
+$('next1').addEventListener('click',function(){current(2);});
+$('back2').addEventListener('click',function(){current(1);});
+$('back3').addEventListener('click',function(){current(2);});
+body.addEventListener('input',function(){showError('bodyError','');$('charCount').textContent=this.value.length;});
+$('next2').addEventListener('click',function(){
+ var message=body.value.trim();
+ if(!message){showError('bodyError','お知らせの言葉を入力してください。');body.focus();return;}
+ $('finalBody').textContent=message;
+ if(file && image){renderPhoto();$('finalPhoto').src=canvas.toDataURL('image/jpeg',0.8);$('finalPhoto').hidden=false;}
+ else{$('finalPhoto').hidden=true;$('finalPhoto').removeAttribute('src');}
+ current(3);
+});
+$('completeBtn').addEventListener('click',function(){current(4);});
+$('restart').addEventListener('click',function(){
+ body.value='';$('charCount').textContent='0';
+ file=null;image=null;rotation=0;$('photoArea').hidden=true;
+ $('finalPhoto').hidden=true;$('finalPhoto').removeAttribute('src');showError('fileError','');showError('bodyError','');
+ if(photoURL){URL.revokeObjectURL(photoURL);photoURL=null;}current(1);
+});
+window.addEventListener('pagehide',function(){if(photoURL)URL.revokeObjectURL(photoURL);});
+})();
+</script>
+</body>
+</html>
