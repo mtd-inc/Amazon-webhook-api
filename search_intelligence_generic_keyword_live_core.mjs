@@ -25,9 +25,20 @@ export function buildPatch(listing){
 export async function executeLive({input,verifyProof,reserve,read,preview,live,now=()=>Date.now()}){
   assertApproval(input,now());
   if(!(await verifyProof(input))) throw Error("APPROVAL_INVALID");
-  const patch=buildPatch(await read());
+  const initialListing=await read();
+  const patch=buildPatch(initialListing);
   const validation=await preview([patch]);
   if(validation?.valid!==true||validation?.errorCount!==0||validation?.issueCount!==0) throw Error("PREVIEW_FAILED");
+  // Re-read immediately before reserving a one-shot PATCH. A listing changed since
+  // VALIDATION_PREVIEW is no longer the listing we validated: fail closed.
+  const justBeforeReserve=await read();
+  const freshPatch=buildPatch(justBeforeReserve);
+  const originalAttributes=JSON.stringify(canonical(initialListing.attributes));
+  const currentAttributes=JSON.stringify(canonical(justBeforeReserve.attributes));
+  if(originalAttributes!==currentAttributes ||
+     JSON.stringify(canonical(patch))!==JSON.stringify(canonical(freshPatch))) {
+    throw Error("PREFLIGHT_LISTING_DRIFT");
+  }
   assertApproval(input,now());
   if(!(await verifyProof(input))) throw Error("APPROVAL_INVALID");
   const reserved=await reserve(input.approvalId);

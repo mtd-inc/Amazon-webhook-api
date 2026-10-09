@@ -42,3 +42,32 @@ test("second attempt is rejected by persistent reservation even after new run",a
   await assert.rejects(()=>executeLive(deps),/ALREADY_RESERVED/);
   assert.equal(sends,1);
 });
+
+test("listing attribute drift after preview blocks reservation and PATCH",async()=>{
+  let reads=0,reservations=0,sends=0;
+  const altered=structuredClone(listing);
+  altered.attributes.item_name=[{value:"new title added concurrently"}];
+  await assert.rejects(()=>executeLive({
+    input,now:()=>Date.parse("2026-10-08T07:05:00Z"),
+    verifyProof:async()=>true,
+    reserve:async()=>{reservations++;return true},
+    read:async()=>++reads===1?listing:altered,
+    preview:async()=>({valid:true,errorCount:0,issueCount:0}),
+    live:async()=>{sends++;return {status:"ACCEPTED"}}
+  }),/PREFLIGHT_LISTING_DRIFT/);
+  assert.equal(reservations,0);assert.equal(sends,0);
+});
+test("changed generic_keyword after preview prevents PATCH",async()=>{
+  let reads=0,sends=0,reservations=0;
+  const altered=structuredClone(listing);
+  altered.attributes.generic_keyword[0].value="concurrent edit";
+  await assert.rejects(()=>executeLive({
+    input,now:()=>Date.parse("2026-10-08T07:05:00Z"),
+    verifyProof:async()=>true,
+    reserve:async()=>{reservations++;return true},
+    read:async()=>++reads===1?listing:altered,
+    preview:async()=>({valid:true,errorCount:0,issueCount:0}),
+    live:async()=>{sends++}
+  }),/SOURCE_DRIFT/);
+  assert.equal(reservations,0);assert.equal(sends,0);
+});
