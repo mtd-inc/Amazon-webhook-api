@@ -8,12 +8,35 @@ export const TARGET = Object.freeze({
   proposedHash:"2bae817231822104a63b1c4a13c3be354feba6d42c34faf4263d75f4fff885d6"
 });
 export const hash=v=>crypto.createHash("sha256").update(v,"utf8").digest("hex");
-export function assertApproval(input,now=Date.now()){
+export function assertScope(input){
   if(input?.candidateId!==TARGET.candidateId||input.sku!==TARGET.sku||input.asin!==TARGET.asin||input.field!==TARGET.field) throw Error("TARGET_DRIFT");
   if(input.currentHash!==TARGET.currentHash||input.proposedHash!==TARGET.proposedHash||hash(TARGET.current)!==TARGET.currentHash||hash(TARGET.proposed)!==TARGET.proposedHash) throw Error("HASH_DRIFT");
-  if(!input.approvalId||!input.liveApprovalId||!input.approvalProof||!input.approvedAt||!input.expiresAt) throw Error("APPROVAL_PROOF_REQUIRED");
+  if(typeof input.approvalId!=="string"||!input.approvalId||
+     typeof input.liveApprovalId!=="string"||!input.liveApprovalId) throw Error("APPROVAL_IDS_REQUIRED");
+}
+export function assertApproval(input,now=Date.now()){
+  assertScope(input);
+  if(typeof input.approvedAt!=="string"||typeof input.expiresAt!=="string") throw Error("VERIFIED_APPROVAL_RECEIPT_REQUIRED");
   const start=Date.parse(input.approvedAt),end=Date.parse(input.expiresAt);
-  if(!Number.isFinite(start)||!Number.isFinite(end)||start>now||end-now<30000||end-start>910000) throw Error("APPROVAL_EXPIRED");
+  if(!Number.isFinite(start)||!Number.isFinite(end)||start>now||end-now<30000||end-start>910000||end<=start) throw Error("APPROVAL_EXPIRED");
+}
+export function fromVerifiedGate(input,receipt,now=Date.now()){
+  assertScope(input);
+  if(receipt?.ok!==true||receipt.operation!=="VERIFY"||
+     receipt.approvalId!==input.approvalId||
+     receipt.liveApprovalId!==input.liveApprovalId||
+     typeof receipt.approvedAt!=="string"||
+     typeof receipt.expiresAt!=="string"||
+     typeof receipt.proposalExpiresAt!=="string") throw Error("CONTROL_PLANE_RECEIPT_INVALID");
+  const result={candidateId:input.candidateId,sku:input.sku,asin:input.asin,
+    field:input.field,currentHash:input.currentHash,proposedHash:input.proposedHash,
+    approvalId:input.approvalId,liveApprovalId:input.liveApprovalId,
+    approvedAt:receipt.approvedAt,expiresAt:receipt.expiresAt,
+    proposalExpiresAt:receipt.proposalExpiresAt};
+  assertApproval(result,now);
+  const proposalEnd=Date.parse(receipt.proposalExpiresAt);
+  if(!Number.isFinite(proposalEnd)||proposalEnd-now<30000) throw Error("PROPOSAL_APPROVAL_EXPIRED");
+  return result;
 }
 export function buildPatch(listing){
   if(listing?.summaries?.[0]?.asin!==TARGET.asin||listing.summaries[0].productType!=="NOTEBOOK_COMPUTER") throw Error("IDENTITY_DRIFT");

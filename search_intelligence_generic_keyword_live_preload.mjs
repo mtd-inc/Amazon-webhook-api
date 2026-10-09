@@ -1,7 +1,7 @@
 import express from "express";
 import fetch from "node-fetch";
 import "dotenv/config";
-import { TARGET, assertApproval, executeLive, verifyPostListing, classifyLiveResult } from "./search_intelligence_generic_keyword_live_core.mjs";
+import { TARGET, assertScope, fromVerifiedGate, executeLive, verifyPostListing, classifyLiveResult } from "./search_intelligence_generic_keyword_live_core.mjs";
 
 const ROUTE="/amazon/listing/search-intelligence-generic-keyword-live";
 const originalListen=express.application.listen;
@@ -69,8 +69,8 @@ async function gate(operation,input) {
     method:"POST",headers:{"content-type":"application/json","x-mtd-internal-control-plane-secret":cfg.controlSecret},
     body:JSON.stringify(gateBody(operation,input))
   });
-  if(!response.ok||data.ok!==true||data.operation!==operation||data.approvalId!==input.approvalId||data.liveApprovalId!==input.liveApprovalId||data.approvedAt!==input.approvedAt||data.expiresAt!==input.expiresAt||(operation==="RESERVE"&&data.reserved!==true))throw Error("CONTROL_PLANE_"+operation+"_BLOCKED");
-  return true;
+  if(!response.ok||data.ok!==true||data.operation!==operation||data.approvalId!==input.approvalId||data.liveApprovalId!==input.liveApprovalId||(input.approvedAt!==undefined&&data.approvedAt!==input.approvedAt)||(input.expiresAt!==undefined&&data.expiresAt!==input.expiresAt)||(operation==="RESERVE"&&data.reserved!==true))throw Error("CONTROL_PLANE_"+operation+"_BLOCKED");
+  return data;
 }
 async function handler(req,res){
   let attempted=false;
@@ -81,11 +81,12 @@ async function handler(req,res){
     processInFlight=true;
     const input=req.body||{};
     // Reject invalid or expired permissions before any Amazon authentication request.
-    assertApproval(input);
-    await gate("VERIFY",input);
+    assertScope(input);
+    const initialReceipt=await gate("VERIFY",input);
+    const verifiedInput=fromVerifiedGate(input,initialReceipt);
     const access=await token();
     let beforeListing;
-    const result=await executeLive({input,verifyProof:async body=>gate("VERIFY",body),reserve:async()=>gate("RESERVE",input),
+    const result=await executeLive({input:verifiedInput,verifyProof:async body=>{const receipt=await gate("VERIFY",body);return Boolean(fromVerifiedGate(body,receipt));},reserve:async()=>{const receipt=await gate("RESERVE",verifiedInput);return receipt.reserved===true;},
       read:async()=>{beforeListing=await spApiRequest(access,TARGET.sku,null,null,"GET");return beforeListing;},
       preview:async patches=>spApiRequest(access,TARGET.sku,"NOTEBOOK_COMPUTER",patches,"PREVIEW"),
       live:async patches=>{attempted=true;return spApiRequest(access,TARGET.sku,"NOTEBOOK_COMPUTER",patches,"LIVE");},

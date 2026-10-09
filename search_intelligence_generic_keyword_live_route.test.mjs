@@ -35,7 +35,7 @@ test("unauthenticated request blocked before external calls",async()=>{
   })} finally {for(const key of ["SI_GENERIC_KEYWORD_LIVE_ENABLED","SI_GENERIC_KEYWORD_LIVE_SECRET"]){if(prior[key]===undefined)delete process.env[key];else process.env[key]=prior[key]}}
 });
 
-test("expired approval is rejected before Amazon authentication and without reservation",async()=>{
+test("missing Control Plane configuration is rejected before Amazon authentication",async()=>{
   const keys=["SI_GENERIC_KEYWORD_LIVE_ENABLED","SI_GENERIC_KEYWORD_LIVE_SECRET",
     "LWA_CLIENT_ID","LWA_CLIENT_SECRET","REFRESH_TOKEN"];
   const prior=Object.fromEntries(keys.map(key=>[key,process.env[key]]));
@@ -58,7 +58,7 @@ test("expired approval is rejected before Amazon authentication and without rese
       })});
       const data=await res.json();
       assert.equal(res.status,409);
-      assert.equal(data.error,"APPROVAL_EXPIRED");
+      assert.equal(data.error,"LIVE_REQUIRED_CONFIG_MISSING");
       assert.equal(data.livePatchSent,false);
       assert.equal(data.livePatchAttempts,0);
     });
