@@ -36,3 +36,46 @@ export async function executeLive({input,verifyProof,reserve,read,preview,live,n
   const result=await live([patch]);
   return {liveAttempted:true,liveResult:result,postVerifyRequired:true};
 }
+
+export function canonical(value){
+  if(Array.isArray(value))return value.map(canonical);
+  if(value&&typeof value==="object")return Object.fromEntries(Object.keys(value).sort().map(k=>[k,canonical(value[k])]));
+  return value;
+}
+export function verifyPostListing(before,after){
+  if(!after)return {verified:false,reason:"POST_GET_UNAVAILABLE"};
+  if(!Array.isArray(after.summaries)||after.summaries.length!==1||
+     after.summaries[0]?.asin!==TARGET.asin||
+     after.summaries[0]?.productType!=="NOTEBOOK_COMPUTER")
+    return {verified:false,reason:"POST_IDENTITY_DRIFT"};
+  if(!after.attributes||typeof after.attributes!=="object"||
+     !before.attributes||typeof before.attributes!=="object")
+    return {verified:false,reason:"POST_ATTRIBUTES_MISSING"};
+  const beforeOther={...before.attributes},afterOther={...after.attributes};
+  delete beforeOther.generic_keyword;delete afterOther.generic_keyword;
+  if(JSON.stringify(canonical(beforeOther))!==JSON.stringify(canonical(afterOther)))
+    return {verified:false,reason:"POST_OTHER_ATTRIBUTES_DRIFT"};
+  const entries=after.attributes.generic_keyword;
+  if(!Array.isArray(entries)||entries.length!==1||
+     typeof entries[0]?.value!=="string"||
+     entries[0].value!==TARGET.proposed||
+     hash(entries[0].value)!==TARGET.proposedHash)
+    return {verified:false,reason:"POST_TARGET_NOT_REFLECTED"};
+  const beforeEntries=before.attributes.generic_keyword;
+  const originalMeta={...beforeEntries[0]},afterMeta={...entries[0]};
+  delete originalMeta.value;delete afterMeta.value;
+  if(JSON.stringify(canonical(originalMeta))!==JSON.stringify(canonical(afterMeta)))
+    return {verified:false,reason:"POST_TARGET_METADATA_DRIFT"};
+  return {verified:true,reason:"POST_VERIFIED"};
+}
+export function classifyLiveResult(response,post){
+  const accepted=response?.httpStatus>=200&&response?.httpStatus<300&&
+    response?.status==="ACCEPTED"&&response?.errorCount===0&&
+    typeof response?.submissionId==="string"&&response.submissionId.length>0;
+  if(post?.reason==="POST_OTHER_ATTRIBUTES_DRIFT"||post?.reason==="POST_IDENTITY_DRIFT"||
+     post?.reason==="POST_TARGET_METADATA_DRIFT")
+    return {ok:false,state:"POST_DRIFT",accepted,postVerified:false};
+  if(post?.verified===true)
+    return {ok:accepted,state:accepted?"POST_VERIFIED":"UNCERTAIN_VERIFIED_WITHOUT_ACCEPTANCE",accepted,postVerified:true};
+  return {ok:false,state:accepted?"ACCEPTED_PENDING_VERIFY":"UNCERTAIN",accepted,postVerified:false};
+}

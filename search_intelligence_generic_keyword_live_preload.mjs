@@ -1,7 +1,7 @@
 import express from "express";
 import fetch from "node-fetch";
 import "dotenv/config";
-import { TARGET, executeLive } from "./search_intelligence_generic_keyword_live_core.mjs";
+import { TARGET, executeLive, verifyPostListing, classifyLiveResult } from "./search_intelligence_generic_keyword_live_core.mjs";
 
 const ROUTE="/amazon/listing/search-intelligence-generic-keyword-live";
 const originalListen=express.application.listen;
@@ -81,17 +81,18 @@ async function handler(req,res){
     processInFlight=true;
     const input=req.body||{};
     const access=await token();
+    let beforeListing;
     const result=await executeLive({input,verifyProof:async body=>gate("VERIFY",body),reserve:async()=>gate("RESERVE",input),
-      read:async()=>spApiRequest(access,TARGET.sku,null,null,"GET"),
+      read:async()=>{beforeListing=await spApiRequest(access,TARGET.sku,null,null,"GET");return beforeListing;},
       preview:async patches=>spApiRequest(access,TARGET.sku,"NOTEBOOK_COMPUTER",patches,"PREVIEW"),
       live:async patches=>{attempted=true;return spApiRequest(access,TARGET.sku,"NOTEBOOK_COMPUTER",patches,"LIVE");},
     });
     if(attempted)processAttempted=true;
     if(!result.liveAttempted)return res.status(409).json({ok:false,...result});
     const after=await spApiRequest(access,TARGET.sku,null,null,"GET").catch(()=>null);
-    const value=after?.attributes?.generic_keyword?.[0]?.value;
-    const verified=value===TARGET.proposed;
-    return res.status(verified?200:202).json({ok:verified,livePatchSent:true,livePatchAttempts:1,postVerified:verified,verificationPending:!verified,liveResult:result.liveResult,warning:verified?null:"LIVE_SENT_DO_NOT_RETRY"});
+    const post=verifyPostListing(beforeListing,after);
+    const outcome=classifyLiveResult(result.liveResult,post);
+    return res.status(outcome.ok?200:202).json({...outcome,livePatchSent:true,livePatchAttempts:1,verificationPending:!outcome.postVerified,postReason:post.reason,liveResult:result.liveResult,warning:outcome.ok?null:"LIVE_SENT_DO_NOT_RETRY"});
   } catch(e){
     if(attempted)processAttempted=true;
     return res.status(409).json({ok:false,livePatchSent:attempted,livePatchAttempts:attempted?1:0,error:e instanceof Error?e.message:String(e),doNotRetry:attempted});
