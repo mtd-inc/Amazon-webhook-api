@@ -1,7 +1,7 @@
 import express from "express";
 import fetch from "node-fetch";
 import "dotenv/config";
-import { TARGET, executeLive, verifyPostListing, classifyLiveResult } from "./search_intelligence_generic_keyword_live_core.mjs";
+import { TARGET, assertApproval, executeLive, verifyPostListing, classifyLiveResult } from "./search_intelligence_generic_keyword_live_core.mjs";
 
 const ROUTE="/amazon/listing/search-intelligence-generic-keyword-live";
 const originalListen=express.application.listen;
@@ -58,7 +58,7 @@ async function spApiRequest(accessToken,sku,productType,patches,mode) {
   }
   const issues=Array.isArray(data.issues)?data.issues:[];
   const errorCount=issues.filter(x=>String(x.severity||"").toUpperCase()==="ERROR").length;
-  return {httpStatus:response.status,status:data.status||"",submissionId:data.submissionId||"",issueCount:issues.length,errorCount,valid:response.ok&&errorCount===0&&issues.length===0&&["VALID","ACCEPTED"].includes(String(data.status||"").toUpperCase())};
+  return {httpStatus:response.status,status:data.status||"",submissionId:data.submissionId||"",issueCount:issues.length,errorCount,valid:mode==="PREVIEW"&&response.ok&&errorCount===0&&issues.length===0&&String(data.status||"").toUpperCase()==="VALID"};
 }
 function gateBody(operation,input){
   return {operation,candidateId:input.candidateId,approvalId:input.approvalId,liveApprovalId:input.liveApprovalId,sellerSku:input.sku,asin:input.asin,targetField:input.field,currentValueHash:input.currentHash,proposedValueHash:input.proposedHash};
@@ -69,7 +69,7 @@ async function gate(operation,input) {
     method:"POST",headers:{"content-type":"application/json","x-mtd-internal-control-plane-secret":cfg.controlSecret},
     body:JSON.stringify(gateBody(operation,input))
   });
-  if(!response.ok||data.ok!==true||data.operation!==operation||data.approvalId!==input.approvalId||data.liveApprovalId!==input.liveApprovalId||(operation==="RESERVE"&&data.reserved!==true))throw Error("CONTROL_PLANE_"+operation+"_BLOCKED");
+  if(!response.ok||data.ok!==true||data.operation!==operation||data.approvalId!==input.approvalId||data.liveApprovalId!==input.liveApprovalId||data.approvedAt!==input.approvedAt||data.expiresAt!==input.expiresAt||(operation==="RESERVE"&&data.reserved!==true))throw Error("CONTROL_PLANE_"+operation+"_BLOCKED");
   return true;
 }
 async function handler(req,res){
@@ -80,6 +80,9 @@ async function handler(req,res){
     if(processAttempted||processInFlight)return res.status(409).json({ok:false,error:"PROCESS_LIVE_ATTEMPT_ALREADY_USED_OR_IN_FLIGHT",livePatchSent:false});
     processInFlight=true;
     const input=req.body||{};
+    // Reject invalid or expired permissions before any Amazon authentication request.
+    assertApproval(input);
+    await gate("VERIFY",input);
     const access=await token();
     let beforeListing;
     const result=await executeLive({input,verifyProof:async body=>gate("VERIFY",body),reserve:async()=>gate("RESERVE",input),
