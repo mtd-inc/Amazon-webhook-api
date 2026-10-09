@@ -34,3 +34,37 @@ test("unauthenticated request blocked before external calls",async()=>{
     assert.equal(r.data.livePatchSent,false);
   })} finally {for(const key of ["SI_GENERIC_KEYWORD_LIVE_ENABLED","SI_GENERIC_KEYWORD_LIVE_SECRET"]){if(prior[key]===undefined)delete process.env[key];else process.env[key]=prior[key]}}
 });
+
+test("expired approval is rejected before Amazon authentication and without reservation",async()=>{
+  const keys=["SI_GENERIC_KEYWORD_LIVE_ENABLED","SI_GENERIC_KEYWORD_LIVE_SECRET",
+    "LWA_CLIENT_ID","LWA_CLIENT_SECRET","REFRESH_TOKEN"];
+  const prior=Object.fromEntries(keys.map(key=>[key,process.env[key]]));
+  process.env.SI_GENERIC_KEYWORD_LIVE_ENABLED="true";
+  process.env.SI_GENERIC_KEYWORD_LIVE_SECRET="local-test-secret";
+  delete process.env.LWA_CLIENT_ID;
+  delete process.env.LWA_CLIENT_SECRET;
+  delete process.env.REFRESH_TOKEN;
+  try {
+    await withServer(async url=>{
+      const res=await fetch(url+target,{method:"POST",headers:{
+        "content-type":"application/json","x-si-live-secret":"local-test-secret"
+      },body:JSON.stringify({
+        candidateId:"CAND-7X-725F-2ZML-DYNABOOK-20260921",
+        sku:"7X-725F-2ZML",asin:"B0HGDBYRS8",field:"generic_keyword",
+        currentHash:"a34a0414c1b595ac0a1b92df37ed93574f93e2399e88f540074883189f5f91db",
+        proposedHash:"2bae817231822104a63b1c4a13c3be354feba6d42c34faf4263d75f4fff885d6",
+        approvalId:"proposal-test",liveApprovalId:"live-test",approvalProof:"local-test",
+        approvedAt:"2026-10-08T07:00:00Z",expiresAt:"2026-10-08T07:15:00Z"
+      })});
+      const data=await res.json();
+      assert.equal(res.status,409);
+      assert.equal(data.error,"APPROVAL_EXPIRED");
+      assert.equal(data.livePatchSent,false);
+      assert.equal(data.livePatchAttempts,0);
+    });
+  } finally {
+    for(const key of keys){
+      if(prior[key]===undefined)delete process.env[key];else process.env[key]=prior[key];
+    }
+  }
+});
