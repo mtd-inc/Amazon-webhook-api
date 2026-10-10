@@ -1,6 +1,7 @@
 import express from "express";
 import fetch from "node-fetch";
 import "dotenv/config";
+import { buildSpApiRequest } from "./search_intelligence_generic_keyword_spapi_contract.mjs";
 import { TARGET, assertScope, fromVerifiedGate, executeLive, verifyPostListing, classifyLiveResult } from "./search_intelligence_generic_keyword_live_core.mjs";
 
 const ROUTE="/amazon/listing/search-intelligence-generic-keyword-live";
@@ -44,13 +45,9 @@ async function token(){
 }
 async function spApiRequest(accessToken,sku,productType,patches,mode) {
   const cfg=config();
-  const q=new URLSearchParams({marketplaceIds:MARKETPLACE_ID,issueLocale:"ja_JP",includedData:mode==="GET"?"summaries,attributes,issues":"issues"});
-  if(mode==="PREVIEW")q.set("mode","VALIDATION_PREVIEW");
-  const url=cfg.endpoint+"/listings/2021-08-01/items/"+encodeURIComponent(cfg.sellerId)+"/"+encodeURIComponent(sku)+"?"+q;
-  const method=mode==="GET"?"GET":"PATCH";
-  const headers={"x-amz-access-token":accessToken,accept:"application/json"};
-  const options={method,headers};
-  if(method==="PATCH"){headers["content-type"]="application/json";options.body=JSON.stringify({productType,patches});}
+  const { url, options }=buildSpApiRequest({
+    endpoint:cfg.endpoint,sellerId:cfg.sellerId,sku,accessToken,mode,patches
+  });
   const {response,data}=await callJson(url,options);
   if(mode==="GET"){
     if(!response.ok)throw Error("FRESH_GET_HTTP_"+response.status);
