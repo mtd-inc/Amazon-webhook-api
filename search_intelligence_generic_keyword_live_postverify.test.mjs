@@ -1,0 +1,17 @@
+import {test} from "node:test";
+import assert from "node:assert/strict";
+import {TARGET,verifyPostListing,classifyLiveResult} from "./search_intelligence_generic_keyword_live_core.mjs";
+const before={summaries:[{asin:TARGET.asin,productType:"NOTEBOOK_COMPUTER"}],attributes:{generic_keyword:[{value:TARGET.current,marketplace_id:"A1VC38T7YXB528"}],item_name:[{value:"same title"}],battery:[{value:"same"}]}};
+const after=structuredClone(before);
+after.attributes.generic_keyword[0].value=TARGET.proposed;
+const accepted={httpStatus:200,status:"ACCEPTED",submissionId:"sub-test",errorCount:0};
+test("full post verify with unchanged non-target attributes",()=>assert.deepEqual(verifyPostListing(before,after),{verified:true,reason:"POST_VERIFIED"}));
+test("accepted and verified",()=>assert.equal(classifyLiveResult(accepted,verifyPostListing(before,after)).state,"POST_VERIFIED"));
+test("accepted but target not visible is pending",()=>assert.equal(classifyLiveResult(accepted,verifyPostListing(before,before)).state,"ACCEPTED_PENDING_VERIFY"));
+test("target visible without ACCEPTED is uncertain",()=>assert.equal(classifyLiveResult({status:"UNKNOWN"},verifyPostListing(before,after)).state,"UNCERTAIN_VERIFIED_WITHOUT_ACCEPTANCE"));
+test("unrelated attribute changed is drift",()=>{const x=structuredClone(after);x.attributes.item_name[0].value="changed";assert.equal(classifyLiveResult(accepted,verifyPostListing(before,x)).state,"POST_DRIFT")});
+test("missing unrelated attribute is drift",()=>{const x=structuredClone(after);delete x.attributes.battery;assert.equal(verifyPostListing(before,x).reason,"POST_OTHER_ATTRIBUTES_DRIFT")});
+test("changed ASIN is drift",()=>{const x=structuredClone(after);x.summaries[0].asin="wrong";assert.equal(verifyPostListing(before,x).reason,"POST_IDENTITY_DRIFT")});
+test("target marketplace metadata changed is drift",()=>{const x=structuredClone(after);x.attributes.generic_keyword[0].marketplace_id="wrong";assert.equal(verifyPostListing(before,x).reason,"POST_TARGET_METADATA_DRIFT")});
+test("no GET after PATCH is uncertain",()=>assert.equal(classifyLiveResult(accepted,verifyPostListing(before,null)).state,"ACCEPTED_PENDING_VERIFY"));
+test("ACCEPTED without submission ID is not acceptance proof",()=>assert.equal(classifyLiveResult({...accepted,submissionId:""},verifyPostListing(before,after)).state,"UNCERTAIN_VERIFIED_WITHOUT_ACCEPTANCE"));
