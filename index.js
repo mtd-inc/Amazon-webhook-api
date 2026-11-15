@@ -1491,6 +1491,72 @@ async function fetchBenchmarkPrices() {
   });
 }
 
+// -------------------- PII fallback: Orders API v2026-01-01 --------------------
+// Disabled by default. Enable only after the Direct-to-Consumer Shipping
+// (Restricted) role is verified for the app and a controlled production test
+// has been explicitly approved. Do not log response bodies, tokens, or PII.
+// This does not alter the legacy Orders v0 order-list/items workflow.
+async function getOrderPiiV2026(accessToken, orderId) {
+  const url =
+    `${SPAPI_ENDPOINT}/orders/2026-01-01/orders/${encodeURIComponent(orderId)}` +
+    "?includedData=BUYER%2CRECIPIENT";
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "x-amz-access-token": accessToken,
+        accept: "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      console.warn("AMAZON_PII_V2026_DIAGNOSTIC", JSON.stringify({
+        phase: "http",
+        httpStatus: response.status
+      }));
+      // Never record the response body: it can contain restricted data.
+      return null;
+    }
+
+    const json = await response.json();
+    const order = json?.order || json?.payload?.order || {};
+    const buyer = order?.buyer || {};
+    const deliveryAddress = order?.recipient?.deliveryAddress || {};
+    const value = (v) => typeof v === "string" ? v : "";
+
+    const pii = {
+      BuyerName: value(buyer.buyerName),
+      BuyerEmail: value(buyer.buyerEmail),
+      ShipName: value(deliveryAddress.name),
+      PostalCode: value(deliveryAddress.postalCode),
+      StateOrRegion: value(deliveryAddress.stateOrRegion),
+      City: value(deliveryAddress.city),
+      AddressLine1: value(deliveryAddress.addressLine1),
+      AddressLine2: value(deliveryAddress.addressLine2),
+      AddressLine3: value(deliveryAddress.addressLine3),
+      Phone: value(deliveryAddress.phone)
+    };
+
+    console.info("AMAZON_PII_V2026_DIAGNOSTIC", JSON.stringify({
+      phase: "response",
+      httpStatus: response.status,
+      hasBuyerName: !!pii.BuyerName,
+      hasShipName: !!pii.ShipName,
+      hasAddressLine1: !!pii.AddressLine1,
+      hasPhone: !!pii.Phone
+    }));
+
+    return pii;
+  } catch (e) {
+    console.warn("AMAZON_PII_V2026_DIAGNOSTIC", JSON.stringify({
+      phase: "request_failure",
+      errorType: e?.name || "Error"
+    }));
+    return null;
+  }
+}
+
 // -------------------- SP-API: order address --------------------
 async function getOrderAddress(accessToken, orderId) {
   const r = await fetch(
@@ -1507,7 +1573,7 @@ async function getOrderAddress(accessToken, orderId) {
   const text = await r.text();
 
   if (!r.ok) {
-    console.error("❌ getOrderAddress error:", orderId, r.status, text);
+    console.warn("AMAZON_PII_V0_HTTP_STATUS", JSON.stringify({ resource: "address", status: r.status }));
     return {};
   }
 
@@ -1533,7 +1599,7 @@ async function getOrderBuyerInfo(accessToken, orderId) {
   const text = await r.text();
 
   if (!r.ok) {
-    console.error("❌ getOrderBuyerInfo error:", orderId, r.status, text);
+    console.warn("AMAZON_PII_V0_HTTP_STATUS", JSON.stringify({ resource: "buyerInfo", status: r.status }));
     return {};
   }
 
@@ -1686,6 +1752,14 @@ async function fetchOrdersWithItems(lastUpdatedAfterIso) {
       o?.BuyerInfo?.BuyerEmail ||
       "";
 
+    // Optional feature-gated fallback. Only missing legacy values are filled.
+    // Existing correct values from v0 always win.
+    const piiFallback =
+      process.env.AMAZON_PII_V2026_ENABLED === "true" &&
+      (!buyerName || !shipName || !addressLine1 || !phone)
+        ? await getOrderPiiV2026(accessToken, orderId)
+        : null;
+
     const shippingFee = items.reduce((sum, item) => sum + (Number(item.ShippingFee) || 0), 0);
     const shippingTax = items.reduce((sum, item) => sum + (Number(item.ShippingTax) || 0), 0);
     const totalTax = items.reduce((sum, item) => sum + (Number(item.TotalTax) || 0), 0);
@@ -1696,18 +1770,18 @@ async function fetchOrdersWithItems(lastUpdatedAfterIso) {
       PurchaseDate:  o.PurchaseDate,
       OrderStatus:   o.OrderStatus,
 
-      BuyerName: buyerName,
-      BuyerEmail: buyerEmail,
+      BuyerName: buyerName || piiFallback?.BuyerName || "",
+      BuyerEmail: buyerEmail || piiFallback?.BuyerEmail || "",
 
       ShippingAddress: {
-        Name:          shipName,
-        Phone:         phone,
-        PostalCode:    postalCode,
-        StateOrRegion: stateOrRegion,
-        City:          city,
-        AddressLine1:  addressLine1,
-        AddressLine2:  addressLine2,
-        AddressLine3:  addressLine3
+        Name:          shipName || piiFallback?.ShipName || "",
+        Phone:         phone || piiFallback?.Phone || "",
+        PostalCode:    postalCode || piiFallback?.PostalCode || "",
+        StateOrRegion: stateOrRegion || piiFallback?.StateOrRegion || "",
+        City:          city || piiFallback?.City || "",
+        AddressLine1:  addressLine1 || piiFallback?.AddressLine1 || "",
+        AddressLine2:  addressLine2 || piiFallback?.AddressLine2 || "",
+        AddressLine3:  addressLine3 || piiFallback?.AddressLine3 || ""
       },
 
       OrderTotal: o?.OrderTotal?.Amount ? Number(o.OrderTotal.Amount) : null,
