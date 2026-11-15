@@ -1580,7 +1580,19 @@ async function getOrderAddress(accessToken, orderId) {
   const json = text ? JSON.parse(text) : {};
   const payload = json?.payload || json?.Payload || {};
 
-  return payload?.ShippingAddress || payload?.shippingAddress || payload || {};
+  const address = payload?.ShippingAddress || payload?.shippingAddress || payload || {};
+  // Diagnostic is opt-in and emits booleans only. Do not log order IDs or PII.
+  if (process.env.AMAZON_PII_V0_DIAGNOSTICS_ENABLED === "true") {
+    console.info("AMAZON_PII_V0_DIAGNOSTIC", JSON.stringify({
+      resource: "address",
+      httpStatus: r.status,
+      hasName: !!(address?.Name || address?.name),
+      hasAddress1: !!(address?.AddressLine1 || address?.addressLine1),
+      hasPhone: !!(address?.Phone || address?.phone),
+      hasPostalCode: !!(address?.PostalCode || address?.postalCode)
+    }));
+  }
+  return address;
 }
 
 // -------------------- SP-API: buyer info --------------------
@@ -1606,7 +1618,16 @@ async function getOrderBuyerInfo(accessToken, orderId) {
   const json = text ? JSON.parse(text) : {};
   const payload = json?.payload || json?.Payload || {};
 
-  return payload?.BuyerInfo || payload?.buyerInfo || payload || {};
+  const buyer = payload?.BuyerInfo || payload?.buyerInfo || payload || {};
+  if (process.env.AMAZON_PII_V0_DIAGNOSTICS_ENABLED === "true") {
+    console.info("AMAZON_PII_V0_DIAGNOSTIC", JSON.stringify({
+      resource: "buyerInfo",
+      httpStatus: r.status,
+      hasName: !!(buyer?.BuyerName || buyer?.buyerName),
+      hasEmail: !!(buyer?.BuyerEmail || buyer?.buyerEmail)
+    }));
+  }
+  return buyer;
 }
 
 // -------------------- SP-API: orderItems --------------------
