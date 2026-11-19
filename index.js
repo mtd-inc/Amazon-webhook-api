@@ -2,7 +2,6 @@ import express from "express";
 import fetch from "node-fetch";
 import "dotenv/config";
 import { registerAmazonAdsDecisionRoutes } from "./amazon_ads_routes.js";
-import { registerX280KanaOneShotRoutes } from "./x280_kana_one_shot_routes.js";
 
 const app = express();
 app.use(express.json());
@@ -1048,12 +1047,6 @@ registerAmazonAdsDecisionRoutes(app, {
   spApiRequest: decisionSpApiRequest,
   sellerId: process.env.SPAPI_SELLER_ID,
   marketplaceId: process.env.SPAPI_MARKETPLACE_ID || "A1VC38T7YXB528",
-  apiSecret: process.env.AMAZON_STOCK_API_SECRET
-});
-
-registerX280KanaOneShotRoutes(app, {
-  spApiRequest: decisionSpApiRequest,
-  sellerId: process.env.SPAPI_SELLER_ID,
   apiSecret: process.env.AMAZON_STOCK_API_SECRET
 });
 
