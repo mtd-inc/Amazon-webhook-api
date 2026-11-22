@@ -87,12 +87,11 @@ function buildPreview(s, now) {
   const start = new Date(now - 60000).toISOString();
   const offers = clone(s.offers);
   const i = offers.findIndex(x => audience(x) === "ALL");
-  offers[i].minimum_seller_allowed_price = [{schedule:[{value_with_tax:TARGET.min}]}];
   offers[i].discounted_price = [{schedule:[{value_with_tax:TARGET.sale,start_at:start,end_at:end}]}];
   const beforeB2b = s.offers.filter(x => audience(x) === "B2B");
   const afterB2b = offers.filter(x => audience(x) === "B2B");
   if (JSON.stringify(beforeB2b) !== JSON.stringify(afterB2b)) return {blocks:["B2B_MUTATION"]};
-  if (JSON.stringify(offers.map(x => {const y=clone(x);if(audience(x)==="ALL"){delete y.discounted_price;delete y.minimum_seller_allowed_price}return y})) !==
+  if (JSON.stringify(offers.map(x => {const y=clone(x);if(audience(x)==="ALL"){delete y.discounted_price}return y})) !==
     JSON.stringify(s.offers.map(x => {const y=clone(x);if(audience(x)==="ALL"){delete y.discounted_price;delete y.minimum_seller_allowed_price}return y}))) return {blocks:["UNRELATED_OFFER_MUTATION"]};
   return {blocks:[],offers,start,end};
 }
