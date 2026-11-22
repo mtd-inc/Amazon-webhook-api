@@ -92,7 +92,7 @@ function buildPreview(s, now) {
   const afterB2b = offers.filter(x => audience(x) === "B2B");
   if (JSON.stringify(beforeB2b) !== JSON.stringify(afterB2b)) return {blocks:["B2B_MUTATION"]};
   if (JSON.stringify(offers.map(x => {const y=clone(x);if(audience(x)==="ALL"){delete y.discounted_price}return y})) !==
-    JSON.stringify(s.offers.map(x => {const y=clone(x);if(audience(x)==="ALL"){delete y.discounted_price;delete y.minimum_seller_allowed_price}return y}))) return {blocks:["UNRELATED_OFFER_MUTATION"]};
+    JSON.stringify(s.offers.map(x => {const y=clone(x);if(audience(x)==="ALL"){delete y.discounted_price}return y}))) return {blocks:["UNRELATED_OFFER_MUTATION"]};
   return {blocks:[],offers,start,end};
 }
 async function handler(req,res) {
