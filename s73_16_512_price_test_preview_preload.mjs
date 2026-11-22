@@ -6,7 +6,13 @@ const SKU = "s73-hs-i5-11g-16gb-ssd512";
 const ASIN = "B0HJ28YCP7";
 const MARKETPLACE = "A1VC38T7YXB528";
 const EXPECTED = Object.freeze({ normal: 50800, min: 49500, b2b: 49500 });
-const TARGET = Object.freeze({ sale: 47800, min: 46800, days: 7 });
+const TARGET = Object.freeze({ sale: 47800, min: 47800, days: 7 });
+// Preview-only economic assumptions, NOT verified purchased parts or serial allocations.
+const ASSUMPTIONS = Object.freeze({memory:8000,ssd:12000,shippingPacking:1250,adsPerOrder:2000,points:508,referralFeeRate:0.10});
+function estimatedContribution(baseCost) {
+  const cost = baseCost+ASSUMPTIONS.memory+ASSUMPTIONS.ssd+ASSUMPTIONS.shippingPacking+ASSUMPTIONS.adsPerOrder+ASSUMPTIONS.points;
+  return {baseCost,breakEvenAtHundred:Math.ceil(cost/(1-ASSUMPTIONS.referralFeeRate)/100)*100,contributionAt47800:TARGET.sale*(1-ASSUMPTIONS.referralFeeRate)-cost};
+}
 const originalListen = express.application.listen;
 
 const clone = x => JSON.parse(JSON.stringify(x));
@@ -51,11 +57,13 @@ function state(listing, now) {
   const offers = listing.attributes?.purchasable_offer || [];
   const consumer = offers.find(o => audience(o) === "ALL");
   const b2b = offers.find(o => audience(o) === "B2B");
+  const consumerCount=offers.filter(o => audience(o)==="ALL").length;
+  const b2bCount=offers.filter(o => audience(o)==="B2B").length;
   return {
     asin:summary.asin, productType:summary.productType, statuses:summary.status || [],
     qty:number(listing.fulfillmentAvailability?.[0]?.quantity),
     errorCodes:(listing.issues || []).filter(x => x.severity === "ERROR").map(x => x.code),
-    offers,consumer,normal:number(active(consumer,"our_price",now)?.value_with_tax),
+    offers,consumer,consumerCount,b2bCount,normal:number(active(consumer,"our_price",now)?.value_with_tax),
     sale:number(active(consumer,"discounted_price",now)?.value_with_tax),
     min:number(active(consumer,"minimum_seller_allowed_price",now)?.value_with_tax),
     b2b:number(active(b2b,"our_price",now)?.value_with_tax)
@@ -64,6 +72,8 @@ function state(listing, now) {
 function buildPreview(s, now) {
   const blocks = [];
   if (s.asin !== ASIN) blocks.push("ASIN_MISMATCH");
+  if (s.productType !== "NOTEBOOK_COMPUTER") blocks.push("PRODUCT_TYPE_MISMATCH");
+  if (s.consumerCount !== 1 || s.b2bCount !== 1) blocks.push("NON_UNIQUE_OFFER_AUDIENCE");
   if (!s.statuses.includes("BUYABLE")) blocks.push("NOT_BUYABLE");
   if (s.errorCodes.length) blocks.push("LISTING_ERRORS");
   if (!(s.qty > 0)) blocks.push("NO_AVAILABLE_QUANTITY");
@@ -88,7 +98,9 @@ function buildPreview(s, now) {
 }
 async function handler(req,res) {
   if (!sameSecret(req.headers["x-api-secret"])) return res.status(401).json({ok:false,decision:"UNAUTHORIZED",writes:0});
-  if (req.body?.dryRun === false || req.body?.liveConfirm) return res.status(400).json({ok:false,decision:"LIVE_DISABLED_PREVIEW_ONLY",writes:0});
+  if (req.body?.dryRun !== true || req.body?.liveConfirm ||
+      (req.body?.sellerSku && req.body.sellerSku !== SKU) ||
+      (req.body?.asin && req.body.asin !== ASIN)) return res.status(400).json({ok:false,decision:"EXACT_SCOPE_DRY_RUN_REQUIRED",writes:0});
   try {
     const seller = String(process.env.SPAPI_SELLER_ID||"");
     const mp = String(process.env.SPAPI_MARKETPLACE_ID||MARKETPLACE);
@@ -111,8 +123,11 @@ async function handler(req,res) {
     return res.status(200).json({
       ok:valid,decision:valid?"AMAZON_VALIDATED_COST_AND_LIVE_GATES_PENDING":"AMAZON_VALIDATION_BLOCKED",
       ...result,preview:{http:preview.http,status:preview.payload.status,issueCodes:issues.map(x=>x.code),errors:errors.length},
-      safety:{persistentWrites:0,skuLimited:true,b2bUnchanged:true,otherSkuUnchanged:true},
-      gatesPending:["COST_ALLOCATED_VERIFIED","LIVE_APPROVAL","SEVEN_DAY_MINIMUM_RESTORE_PLAN"],writes:0
+      safety:{persistentWrites:0,skuLimited:true,b2bUnchanged:true,otherSkuUnchanged:true,
+        assumptionsOnly:true,estimatedLowCost:estimatedContribution(18000),
+        estimatedHighCost:estimatedContribution(25300)},
+      gatesPending:["LOW_COST_SERIAL_ALLOCATION_EVIDENCE","RAM_SSD_AVAILABLE_QC_COST_EVIDENCE",
+        "POINTS_FEES_AD_SPEND_FRESH","LIVE_PRICE_AND_MIN_APPROVAL","SEVEN_DAY_MINIMUM_RESTORE_PLAN"],writes:0
     });
   } catch(e) {return res.status(502).json({ok:false,decision:"EXCEPTION",error:String(e.message||e).slice(0,160),writes:0});}
 }
@@ -121,4 +136,4 @@ express.application.listen = function s73SingleSkuPreflightListen(...args) {
   return originalListen.apply(this,args);
 };
 
-export {state,buildPreview};
+export {state,buildPreview,estimatedContribution};
