@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {state,buildPreview} from "./s73_16_512_price_test_preview_preload.mjs";
+import {state,buildPreview,estimatedContribution} from "./s73_16_512_price_test_preview_preload.mjs";
 const now=Date.parse("2026-11-22T03:00:00Z");
 function listing(overrides={}) {
   return {
@@ -21,7 +21,7 @@ test("changes only one consumer offer min and seven-day discounted price",()=>{
   assert.deepEqual(p.blocks,[]);
   assert.equal(s.normal,50800);assert.equal(s.min,49500);
   assert.equal(p.offers[0].our_price[0].schedule[0].value_with_tax,50800);
-  assert.equal(p.offers[0].minimum_seller_allowed_price[0].schedule[0].value_with_tax,46800);
+  assert.equal(p.offers[0].minimum_seller_allowed_price[0].schedule[0].value_with_tax,47800);
   assert.equal(p.offers[0].discounted_price[0].schedule[0].value_with_tax,47800);
   assert.equal(Date.parse(p.end)-now,7*86400000);
   assert.deepEqual(p.offers[1],original.attributes.purchasable_offer[1]);
@@ -50,4 +50,18 @@ test("blocks wrong ASIN and no BUYABLE",()=>{
   const x=listing({summaries:[{asin:"B0HJL5MCV9",productType:"NOTEBOOK_COMPUTER",status:["DISCOVERABLE"]}]});
   const blocks=buildPreview(state(x,now),now).blocks;
   assert.ok(blocks.includes("ASIN_MISMATCH"));assert.ok(blocks.includes("NOT_BUYABLE"));
+});
+
+test("blocks unexpected product type and duplicate consumer offer",()=>{
+  const x=listing();x.summaries[0].productType="OTHER";x.attributes.purchasable_offer.push({...x.attributes.purchasable_offer[0]});
+  const blocks=buildPreview(state(x,now),now).blocks;
+  assert.ok(blocks.includes("PRODUCT_TYPE_MISMATCH"));
+  assert.ok(blocks.includes("NON_UNIQUE_OFFER_AUDIENCE"));
+});
+test("cost estimates expose high-cost loss and low-cost positive contribution",()=>{
+  const low=estimatedContribution(18000),high=estimatedContribution(25300);
+  assert.equal(low.contributionAt47800,1262);
+  assert.equal(high.contributionAt47800,-6038);
+  assert.ok(low.breakEvenAtHundred<47800);
+  assert.ok(high.breakEvenAtHundred>47800);
 });
