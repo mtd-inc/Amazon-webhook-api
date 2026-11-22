@@ -58,7 +58,7 @@ async function api(access,method,body=null,preview=false){
    ...(body?{body:JSON.stringify(body)}:{})
   });
   const out=await response.json().catch(()=>({}));
-  if(!response.ok){const issues=Array.isArray(out.issues)?out.issues:[];const codes=issues.map(i=>String(i.code||"UNKNOWN").slice(0,20));const attrs=issues.map(i=>Array.isArray(i.attributeNames)?i.attributeNames.map(String).slice(0,3):[]);throw Error("SPAPI_"+method+"_"+(preview?"VALIDATION_":"")+"HTTP_"+response.status+"_ISSUES_"+JSON.stringify({codes,attrs,status:out.status||null}));}
+  if(!response.ok){const issues=Array.isArray(out.issues)?out.issues:[];const codes=issues.map(i=>String(i.code||"UNKNOWN").slice(0,20));const attrs=issues.map(i=>Array.isArray(i.attributeNames)?i.attributeNames.map(String).slice(0,3):[]);const amazonErrors=Array.isArray(out.errors)?out.errors:[];const errorCodes=amazonErrors.map(e=>String(e.code||"UNKNOWN").slice(0,60));const topCode=String(out.code||out.error||"").slice(0,80);const safeDetail=String(out.message||amazonErrors[0]?.message||"").replace(/[A-Za-z0-9_-]{30,}/g,"[REDACTED]").slice(0,180);throw Error("SPAPI_"+method+"_"+(preview?"VALIDATION_":"")+"HTTP_"+response.status+"_ISSUES_"+JSON.stringify({codes,attrs,status:out.status||null,errorCodes,topCode,safeDetail,keys:Object.keys(out).slice(0,8)}));}
   return {http:response.status,data:out};
  }finally{clearTimeout(timer)}
 }
