@@ -85,7 +85,8 @@ function approved(){
   Date.now()<=Date.parse(APPROVAL_DEADLINE);
 }
 function patchOf(p){
- return {productType:p.productType,patches:[{op:"replace",path:"/attributes/purchasable_offer",value:p.plan.offers}]};
+ if(!p?.p?.productType||!Array.isArray(p?.plan?.offers))throw Error("PATCH_SHAPE_INVALID");
+ return {productType:p.p.productType,patches:[{op:"replace",path:"/attributes/purchasable_offer",value:p.plan.offers}]};
 }
 async function checkAfter(access,before,plan){
  let last={};
