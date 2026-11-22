@@ -58,7 +58,7 @@ async function api(access,method,body=null,preview=false){
    ...(body?{body:JSON.stringify(body)}:{})
   });
   const out=await response.json().catch(()=>({}));
-  if(!response.ok)throw Error("SPAPI_"+method+"_"+(preview?"VALIDATION_":"")+"HTTP_"+response.status);
+  if(!response.ok){const issues=Array.isArray(out.issues)?out.issues:[];const codes=issues.map(i=>String(i.code||"UNKNOWN").slice(0,20));const attrs=issues.map(i=>Array.isArray(i.attributeNames)?i.attributeNames.map(String).slice(0,3):[]);throw Error("SPAPI_"+method+"_"+(preview?"VALIDATION_":"")+"HTTP_"+response.status+"_ISSUES_"+JSON.stringify({codes,attrs,status:out.status||null}));}
   return {http:response.status,data:out};
  }finally{clearTimeout(timer)}
 }
