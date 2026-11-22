@@ -175,7 +175,7 @@ export async function run(mode=String(process.env.X13_31800_STARTUP_MODE||"DISAB
   return {status:verified.ok?"LIVE_FRESH_VERIFIED_7D_STARTED":"LIVE_ACCEPTED_FRESH_INCOMPLETE_DO_NOT_RETRY",
    ...verified};
  }catch(e){
-  event("FAILED_CLOSED",{error:String(e.message).slice(0,150),externalChanges:"unknown_if_after_live"});
+  event("FAILED_CLOSED",{error:String(e.message).slice(0,480),externalChanges:mode==="PREVIEW"?0:"UNKNOWN_CHECK_FRESH"});
   return {status:"FAILED_CLOSED",error:String(e.message).slice(0,150)};
  }
 }
