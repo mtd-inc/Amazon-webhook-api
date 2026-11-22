@@ -12,7 +12,7 @@ function listing(overrides={}) {
        our_price:[{schedule:[{value_with_tax:34900}]}],
        minimum_seller_allowed_price:[{schedule:[{value_with_tax:28800}]}],
        maximum_seller_allowed_price:[{schedule:[{value_with_tax:130000}]}]},
-      {currency:"JPY",audience:"B2B",marketplace_id:"A1VC38T7YXB528",our_price:[{schedule:[{value_with_tax:28800}]}]}
+      {currency:"JPY",audience:"B2B",marketplace_id:"A1VC38T7YXB528",our_price:[{schedule:[{value_with_tax:59850}]}]}
     ]},...overrides
   };
 }
@@ -21,7 +21,7 @@ test("changes only one consumer offer min and seven-day discounted price",()=>{
   assert.deepEqual(p.blocks,[]);
   assert.equal(s.normal,34900);assert.equal(s.min,28800);
   assert.equal(p.offers[0].our_price[0].schedule[0].value_with_tax,34900);
-  assert.equal(p.offers[0].minimum_seller_allowed_price[0].schedule[0].value_with_tax,31800);
+  assert.equal(p.offers[0].minimum_seller_allowed_price[0].schedule[0].value_with_tax,28800);
   assert.equal(p.offers[0].discounted_price[0].schedule[0].value_with_tax,31800);
   assert.equal(Date.parse(p.end)-now,7*86400000);
   assert.deepEqual(p.offers[1],original.attributes.purchasable_offer[1]);
