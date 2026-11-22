@@ -11,7 +11,7 @@ const TARGET = Object.freeze({ sale: 31800, min: 28800, days: 7 });
 const ASSUMPTIONS = Object.freeze({memory:0,ssd:0,shippingPacking:1250,adsPerOrder:2000,points:349,referralFeeRate:0.10});
 function estimatedContribution(baseCost) {
   const cost = baseCost+ASSUMPTIONS.memory+ASSUMPTIONS.ssd+ASSUMPTIONS.shippingPacking+ASSUMPTIONS.adsPerOrder+ASSUMPTIONS.points;
-  return {baseCost,breakEvenAtHundred:Math.ceil(cost/(1-ASSUMPTIONS.referralFeeRate)/100)*100,contributionAt47800:TARGET.sale*(1-ASSUMPTIONS.referralFeeRate)-cost};
+  return {baseCost,breakEvenAtHundred:Math.ceil(cost/(1-ASSUMPTIONS.referralFeeRate)/100)*100,contributionAt31800:TARGET.sale*(1-ASSUMPTIONS.referralFeeRate)-cost};
 }
 const originalListen = express.application.listen;
 
@@ -131,7 +131,7 @@ async function handler(req,res) {
     });
   } catch(e) {return res.status(502).json({ok:false,decision:"EXCEPTION",error:String(e.message||e).slice(0,160),writes:0});}
 }
-express.application.listen = function s73SingleSkuPreflightListen(...args) {
+express.application.listen = function x13SingleSkuPreflightListen(...args) {
   if (!this?._router?.stack?.some(layer => layer?.route?.path === ROUTE)) this.post(ROUTE,handler);
   return originalListen.apply(this,args);
 };
