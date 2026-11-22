@@ -120,3 +120,5 @@ express.application.listen = function s73SingleSkuPreflightListen(...args) {
   if (!this?._router?.stack?.some(layer => layer?.route?.path === ROUTE)) this.post(ROUTE,handler);
   return originalListen.apply(this,args);
 };
+
+export {state,buildPreview};
